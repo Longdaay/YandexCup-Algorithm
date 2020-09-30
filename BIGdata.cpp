@@ -100,27 +100,40 @@ int maximum(vector<unsigned long long int>& vec) {					// поиск максимального чи
 	return iter;										  // возвращаем индекс
 }
 
-void BigData::findmax() {																									// поиск максимальной суммы
-	int Scollumn, Srow;																									   // переменные "строк/столбцов-ограничителей"
-	int i = 0;																											  // строка
-	int j = 0;																											 // столбец
-	Scollumn = maximum(summ_col);																						// поиск индекса для стобца
-	Srow = maximum(summ_row);																						   // поиск индекса для строки
-	if ((summ_elem(summ_row) + summ_elem(summ_col)) / (summ_col.size() + summ_row.size()) == spreadsheet[0][0]) { 	  // проверка таблицы из равных элементов если сумма всех элементов деленная на количество строк столбцов равна элементу 
-		summ = spreadsheet[0][0] * ((summ_col.size() + summ_row.size()) - 1);										 // присваиваем сумму по формуле
-		return;																										// выходим
-	}																											   //
+void BigData::findmax() {																								     // поиск максимальной суммы
+	int Scollumn, Srow;																									    // переменные "строк/столбцов-ограничителей"
+	int i = 0;																											   // строка
+	int j = 0;																											  // столбец
+	Scollumn = maximum(summ_col);																						 // поиск индекса для стобца
+	Srow = maximum(summ_row);																						    // поиск индекса для строки
+	if ((summ_elem(summ_row) + summ_elem(summ_col)) / (2 * (summ_col.size() * summ_row.size())) == spreadsheet[0][0]) {// проверка таблицы из равных элементов если сумма всех элементов деленная на количество строк столбцов равна элементу 
+		summ = spreadsheet[0][0] * ((summ_col.size() + summ_row.size()) - 1);										  // присваиваем сумму по формуле
+		return;																										 // выходим
+	}																											    //
 	unsigned long long int curr_summ = 0;
-																												 // идем по ограничителям вниз
-		while (i != Srow) {																						// пока не дошли до ограничителя строки
-			curr_summ += spreadsheet[i][j];																	   // добавляем к текущей сумме элемент
-			i++;																							  // идем вниз дальше
-		}																									 //
-		while (j != Scollumn) {																				// идем по ограничителям вправо
-			curr_summ += spreadsheet[i][j];																   // добавляем к текущей сумме элемент
-			j++;																						  // идем вправо дальше
-		}																							     //
-		findMaxSumm(i, j, curr_summ);																	// после этих проходов, если мы не дошли до конца, перебираем методом в лоб
+	if (Scollumn == 0 && Srow == 0) {
+		while (j != b_vec.size()) {
+			summ += spreadsheet[i][j];
+			j++;
+		}
+		j--;
+		i++;
+		while (i != a_vec.size()) {
+			summ += spreadsheet[i][j];
+			i++;
+		}
+		return;
+	}
+																											  // идем по ограничителям вниз
+	while (i != Srow) {																					  	 // пока не дошли до ограничителя строки
+		curr_summ += spreadsheet[i][j];																	    // добавляем к текущей сумме элемент
+		i++;																							   // идем вниз дальше
+	}																									  //
+	while (j != Scollumn) {																				 // идем по ограничителям вправо
+		curr_summ += spreadsheet[i][j];																    // добавляем к текущей сумме элемент
+		j++;																						   // идем вправо дальше
+	}																							      //
+	findMaxSumm(i, j, curr_summ);																	 // после этих проходов, если мы не дошли до конца, перебираем методом в лоб
 }
 
 void BigData::findMaxSumm(int i_offset, int j_offset, unsigned long long int curr_summ) { // поиск максимальной суммы. Рекурсивная функция. i_offset - номер строки,
