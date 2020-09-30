@@ -12,9 +12,13 @@ public:
 	void fillSpeadsheet();
 	void findMaxSumm(int i_offset, int j_offset, unsigned long long int curr_summ);
 	unsigned long long int getSumm() { return summ; }
+	void fillsumms();
+	void findmax();
 private:
 	vector< int> a_vec;										// 1 массив
-	vector< int> b_vec;									   // 2 массив 
+	vector< int> b_vec;									   // 2 массив
+	vector <unsigned long long int> summ_row;
+	vector <unsigned long long int> summ_col;
 	vector<vector<unsigned long long int>> spreadsheet;	  // матрица 
 	unsigned long long int summ = 0;					 // максимальная найденная сумма
 };
@@ -50,6 +54,8 @@ vector <int> BigData::getVecFile(ifstream& in) {	// получаем из файла массив чис
 	return vec;						//возвращаем массив
 }
 
+
+
 void BigData::fillSpeadsheet() {											// заполняем матрицу
 	spreadsheet.resize(a_vec.size());									   // расширяем строки таблицы на размерность 1го массива 
 	for (int i = 0; i < a_vec.size(); i++) {							  // проходим циклом по строкам
@@ -58,6 +64,63 @@ void BigData::fillSpeadsheet() {											// заполняем матрицу
 			spreadsheet[i][j] = a_vec[i] * pow(10,9) + b_vec[j];	   // заполняем элемент матрицы значением по формуле (pow - возведение в степень (10 - число, 9 - степень))
 		}															  //
 	}																 //
+	fillsumms();
+}
+
+unsigned long long int summ_elem(vector<unsigned long long int>& vec) { // суммирование сумм строк/столбцов
+	unsigned long long int summ = 0;								   //
+	for (auto& token : vec)											  //
+		summ += token;												 //
+	return summ;													// возвращаем полученную сумму
+}
+
+void BigData::fillsumms() {													// заполняем суммы по строкам/столбцам
+	summ_col.resize(b_vec.size());										   // изменяем размер массива
+	summ_row.resize(a_vec.size());										  // изменяем размер массива
+	for (int i = 0; i < a_vec.size(); i++) {							 // заполняем массив сумм строк
+		for (int j = 0; j < b_vec.size(); j++)							//
+			summ_row[i] += spreadsheet[i][j];						   //
+	}																  //
+	for (int j = 0; j < b_vec.size(); j++) {						 // заполняем массив сумм столбцов
+		for (int i = 0; i < a_vec.size(); i++)					    //
+			summ_col[j] += spreadsheet[i][j];					   //
+	}														      //
+}
+
+int maximum(vector<unsigned long long int>& vec) {					// поиск максимального числа в массиве строк/столбцов. Возвращаем его индекс
+	unsigned long long int max;									   // переменная для максимума
+	max = vec[0];												  // задаем максимуму - первое значение
+	int iter = 0;												 // переменная для вывода индекса максимума
+	for (int i = 0; i < vec.size(); i++) {					    //	
+		if (vec[i] > max) {									   // если текущ больше мах
+			iter = i;										  // записываем его индекс
+			max = vec[i];								     // записываем это число в мах
+		}												    //
+	}													   //
+	return iter;										  // возвращаем индекс
+}
+
+void BigData::findmax() {																									// поиск максимальной суммы
+	int Scollumn, Srow;																									   // переменные "строк/столбцов-ограничителей"
+	int i = 0;																											  // строка
+	int j = 0;																											 // столбец
+	Scollumn = maximum(summ_col);																						// поиск индекса для стобца
+	Srow = maximum(summ_row);																						   // поиск индекса для строки
+	if ((summ_elem(summ_row) + summ_elem(summ_col)) / (summ_col.size() + summ_row.size()) == spreadsheet[0][0]) { 	  // проверка таблицы из равных элементов если сумма всех элементов деленная на количество строк столбцов равна элементу 
+		summ = spreadsheet[0][0] * ((summ_col.size() + summ_row.size()) - 1);										 // присваиваем сумму по формуле
+		return;																										// выходим
+	}																											   //
+	unsigned long long int curr_summ = 0;
+																												 // идем по ограничителям вниз
+		while (i != Srow) {																						// пока не дошли до ограничителя строки
+			curr_summ += spreadsheet[i][j];																	   // добавляем к текущей сумме элемент
+			i++;																							  // идем вниз дальше
+		}																									 //
+		while (j != Scollumn) {																				// идем по ограничителям вправо
+			curr_summ += spreadsheet[i][j];																   // добавляем к текущей сумме элемент
+			j++;																						  // идем вправо дальше
+		}																							     //
+		findMaxSumm(i, j, curr_summ);																	// после этих проходов, если мы не дошли до конца, перебираем методом в лоб
 }
 
 void BigData::findMaxSumm(int i_offset, int j_offset, unsigned long long int curr_summ) { // поиск максимальной суммы. Рекурсивная функция. i_offset - номер строки,
@@ -73,7 +136,9 @@ void BigData::findMaxSumm(int i_offset, int j_offset, unsigned long long int cur
 }
 int main() {
 	BigData bd;						// экземпляр класса
-	bd.findMaxSumm(0, 0, 0);	   // вызываем поиск максимальной суммы, задав начальную позицию 0,0, и текущую сумму 0
+	bd.findmax();				   // поиск максимального
 	cout << bd.getSumm();		  // выводим сумму
 	return 0;
 }
+
+
