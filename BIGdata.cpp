@@ -10,27 +10,25 @@ class BigData {
 public:
 	BigData();
 	vector < int> getVecFile(ifstream& in);
-	void fillSpeadsheet();
-	unsigned long long int getSumm() { return summ; }
+	long long int getSumm() { return summ; }
 	void findmax();
 	bool checkForEqual();
 private:
-	vector< int> a_vec;										// 1 массив
-	vector< int> b_vec;									   // 2 массив
-	vector<vector<unsigned long long int>> spreadsheet;	  // матрица 
-	unsigned long long int summ = 0;					 // максимальная найденная сумма
+	vector< int> a_vec;						  // 1 массив
+	vector< int> b_vec;						 // 2 массив
+	int a_vecSize;
+	int b_vecSize;
+	long long summ = 0;					  // максимальная найденная сумма
 };
 
-BigData::BigData() {					// конструктор
-	ifstream in;					   // объявляем поток для файла
-	int sizeA, sizeB;				  // переменные для размеров столбца и строки 
+BigData::BigData() {				   // конструктор
+	ifstream in;					  // объявляем поток для файла 
 	in.open("input.txt");			 // открываем файл
-	in >> sizeA;					// получем размер 1го массива
-	in >> sizeB;				   // получем размер 2го массива
+	in >> a_vecSize;				// получем размер 1го массива
+	in >> b_vecSize;			   // получем размер 2го массива
 	a_vec = getVecFile(in);		  // получаем из файла 1 массив
 	b_vec = getVecFile(in);		 // получаем из файла 2 массив
 	in.close();					// поток закрываем
-	fillSpeadsheet();		   // заполняем матрицу этими массивами
 }
 
 vector <int> BigData::getVecFile(ifstream& in) {	// получаем из файла массив чисел (на вход принимаем поток с файла) на выход отдаем массив чисел из файла
@@ -52,95 +50,76 @@ vector <int> BigData::getVecFile(ifstream& in) {	// получаем из файла массив чис
 	return vec;						//возвращаем массив
 }
 
-void BigData::fillSpeadsheet() {											// заполняем матрицу
-	spreadsheet.resize(a_vec.size());									   // расширяем строки таблицы на размерность 1го массива 
-	for (int i = 0; i < a_vec.size(); i++) {							  // проходим циклом по строкам
-		spreadsheet[i].resize(b_vec.size());							 // расширяем столбцы таблицы на размерность 2го массива
-		for (int j = 0; j < b_vec.size(); j++) {						// проходим циклом по столбцам
-			spreadsheet[i][j] = a_vec[i] * pow(10,9) + b_vec[j];	   // заполняем элемент матрицы значением по формуле (pow - возведение в степень (10 - число, 9 - степень))
-		}															  //
-	}																 //
+int maximum(vector<int>& vec) {								// поиск максимального числа в массиве строк/столбцов. Возвращаем его индекс
+	int max = vec[0];									   // задаем максимуму - первое значение
+	int iter = 0;									 	  // переменная для вывода индекса максимума
+	for (int i = 0; i < vec.size(); i++) {				 //	
+		if (vec[i] > max) {								// если текущ больше мах
+			iter = i;								   // записываем его индекс
+			max = vec[i];							  // записываем это число в мах
+		}											 //
+	}												//
+	return iter;								   // возвращаем индекс
 }
 
-unsigned long long int summ_elem(vector<unsigned long long int>& vec) { // суммирование сумм строк/столбцов
-	unsigned long long int summ = 0;								   //
-	for (auto& token : vec)											  //
-		summ += token;												 //
-	return summ;													// возвращаем полученную сумму
+vector<int> getIndexMaxValues(vector<int>& vec, int& index) {   // массив индексов максимальных значений
+	int maxValueVec = vec[index];							   // присваиваем мах максимальное значение
+	vector<int> vecIndexMaxValues;							  //
+	for (int i = 0; i < vec.size(); i++) {					 // проходим по массиву и ищем максимальные значения 
+		if (vec[i] == maxValueVec)							//
+			vecIndexMaxValues.push_back(i);				   // добавляем в массив
+	}													  //
+	return vecIndexMaxValues;							 // возвращаем массив
 }
 
-int maximum(vector<int>& vec) {					// поиск максимального числа в массиве строк/столбцов. Возвращаем его индекс
-	int max = vec[0];												  // задаем максимуму - первое значение
-	int iter = 0;												 // переменная для вывода индекса максимума
-	for (int i = 0; i < vec.size(); i++) {					    //	
-		if (vec[i] > max) {									   // если текущ больше мах
-			iter = i;										  // записываем его индекс
-			max = vec[i];								     // записываем это число в мах
-		}												    //
-	}													   //
-	return iter;										  // возвращаем индекс
-}
-
-vector<int> getIndexMaxValues(vector<int>& vec, int& index) {//
-	int maxValueVec = vec[index];
-	vector<int> vecIndexMaxValues;
-	for (int i = 0; i < vec.size(); i++) {
-		if (vec[i] == maxValueVec)
-			vecIndexMaxValues.push_back(i);
-	}
-	return vecIndexMaxValues;
-}
-
-bool BigData::checkForEqual() {
-	set<int> setEqualRow;
-	set<int> setEqualColumn;
-	for (auto& token : a_vec)
-		setEqualRow.insert(token);
-	for (auto& token : b_vec)
-		setEqualColumn.insert(token);
-	if (setEqualRow.size() == 1 && setEqualColumn.size() == 1)
+bool BigData::checkForEqual() {										   // проверка значений на одинаковость
+	set<int> setEqualRow;											  // массив по строкам
+	set<int> setEqualColumn;										 // массив по столбцам
+	for (auto& token : a_vec)									    // проходим по массиву значений строк
+		setEqualRow.insert(token);								   // пытаемся добавить элемент
+	for (auto& token : b_vec)									  // проходим по массиву значений строк
+		setEqualColumn.insert(token);							 // пытаемся добавить элемент
+	if (setEqualRow.size() == 1 && setEqualColumn.size() == 1)	// если размеры массивов = 1, то все значения в массивах одинковы
 		return true;
 	else
 		return false;
 }
 
-void BigData::findmax() {																								     // поиск максимальной суммы
-	int StopColumn, StopRow;																									    // переменные "строк/столбцов-ограничителей"
-	vector<int> vecIndexStopRow;//
-	int i = 0;																											   // строка
-	int j = 0;																											  // столбец
-	StopColumn = maximum(b_vec);																						 // поиск индекса для стобца
-	StopRow = maximum(a_vec);																						    // поиск индекса для строки
-	vecIndexStopRow = getIndexMaxValues(a_vec, StopRow);//
-	
-	if (checkForEqual()) {																			// проверка таблицы из равных элементов если сумма всех элементов деленная на количество строк столбцов равна элементу 
-		summ = spreadsheet[0][0] * ((a_vec.size() + b_vec.size()) - 1);					   // присваиваем сумму по формуле
-		return;																					  // выходим
-	}																							 //
-	unsigned long long int curr_summ = 0;
-	for (int step = 0; step < vecIndexStopRow.size(); step++) {
-		StopRow = vecIndexStopRow[step];
-		while (i != StopRow) {
-			curr_summ += spreadsheet[i][j];
-			i++;
-		}
-		while (j != StopColumn) {
-			curr_summ += spreadsheet[i][j];
-			j++;
-		}
+void BigData::findmax() {																						// поиск максимальной суммы
+	int StopColumn, StopRow;																				   // переменные "строк/столбцов-ограничителей"
+	vector<int> vecIndexStopRow;																			  //
+	int i = 0;																								 // строка
+	int j = 0;																								// столбец
+	StopColumn = maximum(b_vec);																		   // поиск индекса для стобца
+	StopRow = maximum(a_vec);																			  // поиск индекса для строки
+	vecIndexStopRow = getIndexMaxValues(a_vec, StopRow);												 // заполняем массив индексов максимальных значений
+	if (checkForEqual()) {																				// если все значения равны
+		summ = (a_vec[i] * pow(10, 9) + b_vec[j]) * ((a_vec.size() + b_vec.size()) - 1);			   // вычисляем по формуле
+		return;																						  // выходим
+	}																								 //
+	for (int step = 0; step < vecIndexStopRow.size(); step++) {										// идем по циклу строк, присваивая ограничителям строк индексы максимальных значений
+		StopRow = vecIndexStopRow[step];														   // присваиваем очередной индекс
+		while (i != StopRow) {																	  // пока не дошли до ограничителя строки
+			summ += a_vec[i] * pow(10, 9) + b_vec[j];											 // добавляем к сумме новое значение
+			i++;																				//
+		}																					   //
+		while (j != StopColumn) {															  // пока не дошли до ограничителя столбца
+			summ += a_vec[i] * pow(10, 9) + b_vec[j];									 	 // добавляем к сумме новое значение
+			j++;																			//
+		}																				   //
 	}
-	if (StopColumn == j && StopRow == i) {
-		while (j != b_vec.size()) {
-			curr_summ += spreadsheet[i][j];
-			j++;
+	vecIndexStopRow.clear();
+	if (StopColumn == j && StopRow == i) {												// если стоим на ограничителях, то необходимо идти до конца строки и до конца столбца. Это максимальный путь
+		while (j != b_vecSize) {													   // пока не дошли до последнего столбца
+			summ += a_vec[i] * pow(10, 9) + b_vec[j];								  // добавляем к сумме новое значение
+			j++;																	 //
 		}
-		j--;
-		i++;
-		while (i != a_vec.size()) {
-			curr_summ += spreadsheet[i][j];
-			i++;
-		}
-		summ = curr_summ;
+		j--;																	   //
+		i++;																	  //
+		while (i != a_vecSize) {												 // пока не дошли до последнй строки
+			summ += a_vec[i] * pow(10, 9) + b_vec[j];							// добавляем к сумме новое значение
+			i++;															   //
+		}																	  //
 		return;
 	}
 }
