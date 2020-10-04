@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="BIGdata.cpp">
+    <ClCompile Include="NetworkTopology.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
   </ItemGroup>
