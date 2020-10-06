@@ -2,9 +2,6 @@
 #include <vector>
 #include <fstream>
 #define _CRT_SECURE_NO_WARNINGS
-#include <stdio.h>
-#include <stdlib.h>
-#define SIZE 9
 #include <algorithm>
 
 using namespace std;
@@ -17,10 +14,13 @@ public:
     int Dijkstra(int st);
     void checkAllComps();
     void printSumms();
+    vector <int> findMaxCountConnections();
+    void printStorage();
 private:
 	int countComps;
 	vector <vector<int>> CompsConnections;
     vector <vector<int>> summComps;
+    vector <int> CompStorage;
 };
 
 Topology::Topology() {
@@ -66,12 +66,14 @@ void Topology::setCompsConnections() {
 
 int Topology::Dijkstra(int begin_index)
 {
-    int d[SIZE]; // минимальное расстояние
-    int v[SIZE]; // посещенные вершины
+    vector <int> d; // минимальное расстояние
+    d.resize(countComps);
+    vector <int> v; // посещенные вершины
+    v.resize(countComps);
     int temp, minindex, min;
     int summ = 0;
     //Инициализация вершин и расстояний
-    for (int i = 0; i < SIZE; i++)
+    for (int i = 0; i < countComps; i++)
     {
         d[i] = 10000;
         v[i] = 1;
@@ -81,7 +83,7 @@ int Topology::Dijkstra(int begin_index)
     do {
         minindex = 10000;
         min = 10000;
-        for (int i = 0; i < SIZE; i++)
+        for (int i = 0; i < countComps; i++)
         { // Если вершину ещё не обошли и вес меньше min
             if ((v[i] == 1) && (d[i] < min))
             { // Переприсваиваем значения
@@ -94,7 +96,7 @@ int Topology::Dijkstra(int begin_index)
         // и сравниваем с текущим минимальным весом вершины
         if (minindex != 10000)
         {
-            for (int i = 0; i < SIZE; i++)
+            for (int i = 0; i < countComps; i++)
             {
                 if (CompsConnections[minindex][i] > 0)
                 {
@@ -109,19 +111,70 @@ int Topology::Dijkstra(int begin_index)
         }
     } while (minindex < 10000);
     // Вывод кратчайших расстояний до вершин
-    printf("\nКратчайшие расстояния до вершин: \n");
-    for (int i = 1; i < SIZE + 1; i++)
+ /*   printf("\nКратчайшие расстояния до вершин: \n");
+    for (int i = 1; i < countComps + 1; i++)
         printf("%5d ", i);
-    cout << "\n------------------------------------------\n";
-    for (int i = 0; i < SIZE; i++) {
-        printf("%5d ", d[i]);
+    cout << "\n------------------------------------------\n";*/
+    for (int i = 0; i < countComps; i++) {
         summ += d[i];
     }
     return summ;
 }
 
+vector<int> Topology::findMaxCountConnections() {
+    vector<int> tempvec;
+    vector < vector<int>> summsRows;
+    int summ = 0;
+    for (int i = 0; i < countComps; i++) {
+        for (int j = 0; j < countComps; j++) {
+            summ += CompsConnections[i][j];
+        }
+        tempvec.push_back(summ);
+        tempvec.push_back(i);
+        summsRows.push_back(tempvec);
+        tempvec.clear();
+        summ = 0;
+    }
+    sort(summsRows.begin(), summsRows.begin() + summsRows.size());
+   /*for (auto& Connection : summsRows) {
+        for (auto& currentComp : Connection)
+            cout << currentComp << " ";
+        cout << endl;
+    }
+    cout << endl;*/
+    if (countComps == 3) {
+        tempvec.push_back(summsRows[0][1]);
+        tempvec.push_back(summsRows[1][1]);
+        return tempvec;
+    }
+    while (tempvec.size() < 2) {
+        summ = summsRows[summsRows.size() - 1][0];
+        tempvec.push_back(summsRows[summsRows.size() - 1][1]);
+        summsRows.pop_back();
+        for (int i = summsRows.size() - 1; i >= 0; i--) {
+            if (summ == summsRows[i][0]) {
+                tempvec.push_back(summsRows[i][1]);
+                summsRows.pop_back();
+            }
+        }
+    }
+    /*for (int i = 0; i < tempvec.size(); i++)
+        cout << tempvec[i] << " ";
+    system("pause");*/
+    return tempvec;
+}
+
 void Topology::checkAllComps() {
     vector<int> tempvec;
+    vector <int> CompsMaxLink;
+    
+    if (countComps == 3) {
+        CompsMaxLink = findMaxCountConnections();
+        CompStorage.push_back(CompsMaxLink[0] + 1);
+        CompStorage.push_back(CompsMaxLink[1] + 1);
+        return;
+    }
+
     for (int i = 0; i < countComps; i++) {
         tempvec.push_back(Dijkstra(i));
         tempvec.push_back(i);
@@ -129,7 +182,9 @@ void Topology::checkAllComps() {
         tempvec.clear();
     }
     sort(summComps.begin(), summComps.begin() + summComps.size());
-
+    CompStorage.push_back(summComps[0][1] + 1);
+    CompStorage.push_back(summComps[1][1] + 1);
+    sort(CompStorage.begin(), CompStorage.begin() + CompStorage.size());
 }
 
 void Topology::printSumms() {
@@ -148,13 +203,16 @@ void Topology::printConnections() {
 	}
 }
 
+void Topology::printStorage() {
+    for (auto& token : CompStorage)
+        cout << token << " ";
+    cout << endl;
+}
+
 int main() {
 	setlocale(0, "");
 	Topology tp;
-	tp.printConnections();
     tp.checkAllComps();
-    cout << endl;
-    tp.printSumms();
-    cout << endl;
+    tp.printStorage();
 	return 0;
 }
