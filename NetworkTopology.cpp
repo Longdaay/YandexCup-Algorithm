@@ -1,6 +1,11 @@
 #include <iostream>
 #include <vector>
 #include <fstream>
+#define _CRT_SECURE_NO_WARNINGS
+#include <stdio.h>
+#include <stdlib.h>
+#define SIZE 9
+#include <algorithm>
 
 using namespace std;
 
@@ -9,10 +14,13 @@ public:
 	Topology();
 	void setCompsConnections();
 	void printConnections();
-    void Dijkstra(int st);
+    int Dijkstra(int st);
+    void checkAllComps();
+    void printSumms();
 private:
 	int countComps;
 	vector <vector<int>> CompsConnections;
+    vector <vector<int>> summComps;
 };
 
 Topology::Topology() {
@@ -26,9 +34,12 @@ void Topology::setCompsConnections() {
 	char t;
 	int iter = 0;
 	in >> countComps;
+
 	CompsConnections.resize(countComps);
+	for (int i = 0; i < countComps; i++)
+		CompsConnections[i].resize(countComps);
+
 	while (iter < countComps - 1) {
-		CompsConnections[iter].resize(countComps);
 		CompConnection.clear();
 		in >> temp;
 		CompConnection.push_back(temp);
@@ -42,55 +53,90 @@ void Topology::setCompsConnections() {
 			else
 				t = '\n';
 		}
-		CompsConnections[CompConnection[0] - 1][CompConnection[1] - 1] = 1;
-		CompsConnections[CompConnection[1] - 1][CompConnection[0] - 1] = 1;
+
+		int first = CompConnection[0] - 1;
+		int second = CompConnection[1] - 1;
+		CompsConnections[first][second] = 1;
+		CompsConnections[second][first] = 1;
 		
 		iter++;
 	}
 	in.close();
 }
 
-void Topology::Dijkstra(int st)
+int Topology::Dijkstra(int begin_index)
 {
-    vector<bool> visited;
-	visited.resize(countComps);
-    vector<int> D;
-	D.resize(countComps);
-    for (int i = 0; i < countComps; i++)
+    int d[SIZE]; // минимальное расстояние
+    int v[SIZE]; // посещенные вершины
+    int temp, minindex, min;
+    int summ = 0;
+    //Инициализация вершин и расстояний
+    for (int i = 0; i < SIZE; i++)
     {
-        D[i] = CompsConnections[st][i];
-        visited[i] = false;
+        d[i] = 10000;
+        v[i] = 1;
     }
-    D[st] = 0;
-    int index = 0, u = 0;
-    for (int i = 0; i < countComps; i++)
-    {
-        int min = INT_MAX;
-        for (int j = 0; j < countComps; j++)
-        {
-            if (!visited[j] && D[j] < min)
-            {
-                min = D[j];
-                index = j;
+    d[begin_index] = 0;
+    // Шаг алгоритма
+    do {
+        minindex = 10000;
+        min = 10000;
+        for (int i = 0; i < SIZE; i++)
+        { // Если вершину ещё не обошли и вес меньше min
+            if ((v[i] == 1) && (d[i] < min))
+            { // Переприсваиваем значения
+                min = d[i];
+                minindex = i;
             }
         }
-        u = index;
-        visited[u] = true;
-        for (int j = 0; j < countComps; j++)
+        // Добавляем найденный минимальный вес
+        // к текущему весу вершины
+        // и сравниваем с текущим минимальным весом вершины
+        if (minindex != 10000)
         {
-            if (!visited[j] && CompsConnections[u][j] != INT_MAX && D[u] != INT_MAX && (D[u] + CompsConnections[u][j] < D[j]))
+            for (int i = 0; i < SIZE; i++)
             {
-                D[j] = D[u] + CompsConnections[u][j];
+                if (CompsConnections[minindex][i] > 0)
+                {
+                    temp = min + CompsConnections[minindex][i];
+                    if (temp < d[i])
+                    {
+                        d[i] = temp;
+                    }
+                }
             }
+            v[minindex] = 0;
         }
+    } while (minindex < 10000);
+    // Вывод кратчайших расстояний до вершин
+    printf("\nКратчайшие расстояния до вершин: \n");
+    for (int i = 1; i < SIZE + 1; i++)
+        printf("%5d ", i);
+    cout << "\n------------------------------------------\n";
+    for (int i = 0; i < SIZE; i++) {
+        printf("%5d ", d[i]);
+        summ += d[i];
     }
-    cout << "Стоимость пути из начальной вершины до остальных(Алгоритм Дейкстры):\t\n";
-    for (int i = 0; i < countComps; i++)
-    {
-        if (D[i] != INT_MAX)
-            cout << st << " -> " << i << " = " << D[i] << endl;
-        else
-            cout << st << " -> " << i << " = " << "маршрут недоступен" << endl;
+    return summ;
+}
+
+void Topology::checkAllComps() {
+    vector<int> tempvec;
+    for (int i = 0; i < countComps; i++) {
+        tempvec.push_back(Dijkstra(i));
+        tempvec.push_back(i);
+        summComps.push_back(tempvec);
+        tempvec.clear();
+    }
+    sort(summComps.begin(), summComps.begin() + summComps.size());
+
+}
+
+void Topology::printSumms() {
+    for (auto& Connection : summComps) {
+        for (auto& currentComp : Connection)
+            cout << currentComp << " ";
+        cout << endl;
     }
 }
 
@@ -103,9 +149,12 @@ void Topology::printConnections() {
 }
 
 int main() {
+	setlocale(0, "");
 	Topology tp;
 	tp.printConnections();
-	cout << endl;
-	//tp.Dijkstra(0);
+    tp.checkAllComps();
+    cout << endl;
+    tp.printSumms();
+    cout << endl;
 	return 0;
 }
