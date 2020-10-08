@@ -23,102 +23,94 @@ private:
     vector <int> CompStorage;
 };
 
-Topology::Topology() {
-	setCompsConnections();
+Topology::Topology() {       // конструктор
+	setCompsConnections();  //
 }
-void Topology::setCompsConnections() {
-	ifstream in;
-	in.open("input.txt");
-	vector<int> CompConnection;
-	int temp;
-	char t;
-	int iter = 0;
-	in >> countComps;
+void Topology::setCompsConnections() {                                             // получаем из файла соединени€ узлов
+	ifstream in;                                                                  // поток
+	in.open("input.txt");                                                        // открывем файл
+	vector<int> CompConnection;                                                 // вектор дл€ одного соединени€
+	int temp;                                                                  // переменна€ узла
+	char t;                                                                   //
+	int iter = 0;                                                            // итератор
+	in >> countComps;                                                       // получаем количество узлов
 
-	CompsConnections.resize(countComps);
-	for (int i = 0; i < countComps; i++)
-		CompsConnections[i].resize(countComps);
+	CompsConnections.resize(countComps);                                  // расшир€ем матрицу смежности узлов
+	for (int i = 0; i < countComps; i++)                                 //
+		CompsConnections[i].resize(countComps);                         //
 
-	while (iter < countComps - 1) {
-		CompConnection.clear();
-		in >> temp;
-		CompConnection.push_back(temp);
-		in.get(t);
-		while (t != '\n') {
-			if (!in.eof()) {
-				in >> temp;
-				CompConnection.push_back(temp);
-				in.get(t);
+	while (iter < countComps - 1) {                                    // пока не дошли до конечного соединени€
+		CompConnection.clear();                                       //
+		in >> temp;                                                  // считываем первый узел
+		CompConnection.push_back(temp);                             //  в массив
+		in.get(t);                                                 // считываем символ
+		while (t != '\n') {                                       // пока символ не конец строки
+			if (!in.eof()) {                                     // если не достигли конца файла
+				in >> temp;                                     // считываем второй узел
+				CompConnection.push_back(temp);                // в массив
+				in.get(t);                                    // считываем символ
 			}
-			else
-				t = '\n';
+			else                                            // иначе
+				t = '\n';                                  // присваиваем конец строки
 		}
 
-		int first = CompConnection[0] - 1;
-		int second = CompConnection[1] - 1;
-		CompsConnections[first][second] = 1;
-		CompsConnections[second][first] = 1;
+		int first = CompConnection[0] - 1;               // перва€ позици€
+		int second = CompConnection[1] - 1;             // втора€ позици€
+		CompsConnections[first][second] = 1;           // заполнили матрицу смежности
+		CompsConnections[second][first] = 1;          //
 		
-		iter++;
-	}
-	in.close();
+		iter++;                                     // добавили к итератору
+	}                                              //
+	in.close();                                   //
 }
 
 int Topology::Dijkstra(int begin_index)
 {
-    vector <int> d; // минимальное рассто€ние
-    d.resize(countComps);
-    vector <int> v; // посещенные вершины
-    v.resize(countComps);
-    int temp, minindex, min;
-    int summ = 0;
-    //»нициализаци€ вершин и рассто€ний
-    for (int i = 0; i < countComps; i++)
-    {
-        d[i] = 10000;
-        v[i] = 1;
+    vector <int> d;                                                                                  // массив рассто€ний до всех узлов от текущего начального узла
+    d.resize(countComps);                                                                           //
+    vector <int> v;                                                                                // массив посещенных узлов
+    v.resize(countComps);                                                                         //
+    int temp, minindex, min;                                                                     //
+    int summ = 0;                                                                               //
+                                                                                               // инициализаци€ узлов и рассто€ний
+    for (int i = 0; i < countComps; i++) {                                                    //
+        d[i] = 10000;                                                                        //
+        v[i] = 1;                                                                           //
     }
-    d[begin_index] = 0;
-    // Ўаг алгоритма
-    do {
-        minindex = 10000;
-        min = 10000;
-        for (int i = 0; i < countComps; i++)
-        { // ≈сли вершину ещЄ не обошли и вес меньше min
-            if ((v[i] == 1) && (d[i] < min))
-            { // ѕереприсваиваем значени€
-                min = d[i];
-                minindex = i;
+    d[begin_index] = 0;                                                                   //
+                                                                                         // Ўаг алгоритма
+    do {                                                                                //
+        minindex = 10000;                                                              //
+        min = 10000;                                                                  //
+        for (int i = 0; i < countComps; i++) {                                       // ≈сли вершину ещЄ не обошли и вес меньше min
+            if ((v[i] == 1) && (d[i] < min)) {                                      // ѕереприсваиваем значени€
+                min = d[i];                                                        //
+                minindex = i;                                                     //
             }
         }
-        // ƒобавл€ем найденный минимальный вес
-        // к текущему весу вершины
-        // и сравниваем с текущим минимальным весом вершины
-        if (minindex != 10000)
-        {
-            for (int i = 0; i < countComps; i++)
-            {
-                if (CompsConnections[minindex][i] > 0)
-                {
-                    temp = min + CompsConnections[minindex][i];
-                    if (temp < d[i])
-                    {
-                        d[i] = temp;
-                    }
-                }
-            }
-            v[minindex] = 0;
-        }
-    } while (minindex < 10000);
-    // ¬ывод кратчайших рассто€ний до вершин
+                                                                               // ƒобавл€ем найденный минимальный вес
+                                                                              // к текущему весу вершины
+                                                                             // и сравниваем с текущим минимальным весом вершины
+        if (minindex != 10000) {                                            //
+            for (int i = 0; i < countComps; i++) {                         //
+                if (CompsConnections[minindex][i] > 0) {                  //
+                    temp = min + CompsConnections[minindex][i];          //
+                    if (temp < d[i])                                    //
+                        d[i] = temp;                                   //
+                }                                                     //
+            }                                                        //
+            v[minindex] = 0;                                        //
+        }                                                          //
+    } while (minindex < 10000);                                   //
+                                                                 // ¬ывод кратчайших рассто€ний до вершин
  /*   printf("\n ратчайшие рассто€ни€ до вершин: \n");
     for (int i = 1; i < countComps + 1; i++)
         printf("%5d ", i);
-    cout << "\n------------------------------------------\n";*/
-    for (int i = 0; i < countComps; i++) {
-        summ += d[i];
-    }
-    return summ;
+    cout << "\n---------------------------------\n";*/
+    for (int i = 0; i < countComps; i++) {                  //
+        summ += d[i];                                      //
+    }                                                     //
+    return summ;                                         //
 }
 
 vector<int> Topology::findMaxCountConnections() {
