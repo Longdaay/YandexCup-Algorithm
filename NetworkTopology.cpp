@@ -156,6 +156,34 @@ vector<int> Topology::findMaxCountConnections() {
     return tempvec;
 }
 
+void Matrixrecursion(int currentComp, vector<vector<int>>& MainMatrix, vector<int>&CompsVisited, vector<vector<int>> & HalfMatrix) {
+    for (int i = currentComp; i < MainMatrix.size(); i++) {
+        for (int j = 0; j < MainMatrix.size(); j++) {
+            if (MainMatrix[i][j] == 1) {
+                if (!CompsVisited[j]) {
+                    CompsVisited[j] = 1; // помечаем посещенной
+                    HalfMatrix.resize(HalfMatrix.size() + 1); // добавляем в матрицу
+                    HalfMatrix[HalfMatrix.size() - 1].resize(HalfMatrix.size() + 1);
+                    HalfMatrix[HalfMatrix.size() - 1][]
+                    Matrixrecursion(i, MainMatrix, CompsVisited, HalfMatrix);
+                }
+            }
+        }
+    }
+}
+
+void getHalfMatrix(vector<vector<int>>& matrix, vector<int>compsStorage) {
+    vector<vector<int>> halfMatrix;
+    vector<int> CompsIndex;
+    vector<int> CompsVisited(matrix.size(), 0);
+    int potentialComp = compsStorage[0] - 1;
+    CompsVisited[1] = true;
+    halfMatrix.resize(1);
+    halfMatrix[0].resize(1);
+    Matrixrecursion(potentialComp, matrix, CompsVisited, halfMatrix);
+    system("pause");
+}
+
 void Topology::checkAllComps() {
     vector<int> tempvec;
     vector <int> CompsMaxLink;
@@ -177,6 +205,7 @@ void Topology::checkAllComps() {
     CompStorage.push_back(summComps[0][1] + 1);
     CompStorage.push_back(summComps[1][1] + 1);
     sort(CompStorage.begin(), CompStorage.begin() + CompStorage.size());
+    getHalfMatrix(CompsConnections, CompStorage[0]);
 }
 
 void Topology::printSumms() {
