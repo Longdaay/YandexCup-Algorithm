@@ -104,15 +104,15 @@ int Dijkstra(int begin_index, vector<vector<int>>& matrix)
         }                                                          //
     } while (minindex < 10000);                                   //
                                                                  // Вывод кратчайших расстояний до вершин
-    cout << "\nКратчайшие расстояния от узлов до узла " << begin_index + 1 << endl;
+    /*cout << "\nКратчайшие расстояния от узлов до узла " << begin_index + 1 << endl;
     for (int i = 1; i < matrix.size() + 1; i++)
         printf("%5d ", i);
-    cout << "\n---------------------------------\n";
+    cout << "\n---------------------------------\n";*/
     for (int i = 0; i < matrix.size(); i++) {                  //
-        printf("%5d ", d[i]);
+        //printf("%5d ", d[i]);
         summ += d[i];                                      //
     }                                                     //
-    cout << "Общая сумма по строке - " << summ;
+    //cout << "Общая сумма по строке - " << summ;
     return summ;                                         //
 }
 
@@ -160,15 +160,15 @@ vector<int> Topology::findMaxCountConnections() {
 }
 
 vector<vector<int>> Matrixrecursion(int currentComp, vector<vector<int>>& MainMatrix, vector<int>& CompsVisited, vector<vector<int>>& HalfMatrix, int currentRow, map<int,int>& CompsHalfMatrix) {
+    if (CompsHalfMatrix.find(currentRow) != CompsHalfMatrix.end()) {
+        currentRow += offset;
+        offset = 0;
+    }
+    CompsHalfMatrix[currentRow] = currentComp;
     for (int j = 0; j < MainMatrix.size(); j++) {
         if (MainMatrix[currentComp][j] == 1) {
             if (!CompsVisited[j]) {
                 CompsVisited[j] = 1; // помечаем посещенной
-                if (CompsHalfMatrix.find(currentRow) != CompsHalfMatrix.end()) {
-                    currentRow += offset;
-                    offset = 0;
-                }
-                CompsHalfMatrix[currentRow] = currentComp;
                 HalfMatrix.resize(HalfMatrix.size() + 1); // расширяем матрицу
                 for (int i = 0; i < HalfMatrix.size(); i++) {
                     HalfMatrix[i].resize(HalfMatrix.size());
@@ -194,14 +194,15 @@ int getStorage(vector<vector<int>>& matrix, vector<int>compsStorage, int potenti
     CompsVisited[compsStorage[1]] = true;
     halfMatrix.resize(1);
     halfMatrix[0].resize(1);
+    offset = 0;
     halfMatrix = Matrixrecursion(potentionalStorage, matrix, CompsVisited, halfMatrix, 0, CompsHalfMatrix);
-    cout << endl;
-    for (auto& Connection : halfMatrix) {
+    //cout << endl;
+    /*for (auto& Connection : halfMatrix) {
         for (auto& currentComp : Connection)
             cout << currentComp << " ";
         cout << endl;
-    }
-    system("pause");
+    }*/
+    //system("pause");
     for (int i = 0; i < halfMatrix.size(); i++) {
         tempvec.push_back(Dijkstra(i, halfMatrix));
         tempvec.push_back(i);
@@ -209,7 +210,7 @@ int getStorage(vector<vector<int>>& matrix, vector<int>compsStorage, int potenti
         tempvec.clear();
     }
     sort(summComps.begin(), summComps.begin() + summComps.size());
-    system("pause");
+    //system("pause");
     return CompsHalfMatrix.find(summComps[0][1])->second;
 
 }
@@ -240,6 +241,8 @@ void Topology::checkAllComps() {
     cout << " ";
     cout << getStorage(CompsConnections, potentialStorage, potentialStorage[1]) + 1;
 }
+
+
 
 void Topology::printSumms() {
     for (auto& Connection : summComps) {
