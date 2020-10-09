@@ -3,15 +3,16 @@
 #include <fstream>
 #define _CRT_SECURE_NO_WARNINGS
 #include <algorithm>
+#include <map>
 
 using namespace std;
+int offset = 0;
 
 class Topology {
 public:
 	Topology();
 	void setCompsConnections();
 	void printConnections();
-    int Dijkstra(int st);
     void checkAllComps();
     void printSumms();
     vector <int> findMaxCountConnections();
@@ -64,16 +65,16 @@ void Topology::setCompsConnections() {                                          
 	in.close();                                   //
 }
 
-int Topology::Dijkstra(int begin_index)
+int Dijkstra(int begin_index, vector<vector<int>>& matrix)
 {
     vector <int> d;                                                                                  // массив расстояний до всех узлов от текущего начального узла
-    d.resize(countComps);                                                                           //
+    d.resize(matrix.size());                                                                           //
     vector <int> v;                                                                                // массив посещенных узлов
-    v.resize(countComps);                                                                         //
+    v.resize(matrix.size());                                                                         //
     int temp, minindex, min;                                                                     //
     int summ = 0;                                                                               //
                                                                                                // инициализация узлов и расстояний
-    for (int i = 0; i < countComps; i++) {                                                    //
+    for (int i = 0; i < matrix.size(); i++) {                                                    //
         d[i] = 10000;                                                                        //
         v[i] = 1;                                                                           //
     }
@@ -82,7 +83,7 @@ int Topology::Dijkstra(int begin_index)
     do {                                                                                //
         minindex = 10000;                                                              //
         min = 10000;                                                                  //
-        for (int i = 0; i < countComps; i++) {                                       // Если вершину ещё не обошли и вес меньше min
+        for (int i = 0; i < matrix.size(); i++) {                                       // Если вершину ещё не обошли и вес меньше min
             if ((v[i] == 1) && (d[i] < min)) {                                      // Переприсваиваем значения
                 min = d[i];                                                        //
                 minindex = i;                                                     //
@@ -92,9 +93,9 @@ int Topology::Dijkstra(int begin_index)
                                                                               // к текущему весу вершины
                                                                              // и сравниваем с текущим минимальным весом вершины
         if (minindex != 10000) {                                            //
-            for (int i = 0; i < countComps; i++) {                         //
-                if (CompsConnections[minindex][i] > 0) {                  //
-                    temp = min + CompsConnections[minindex][i];          //
+            for (int i = 0; i < matrix.size(); i++) {                         //
+                if (matrix[minindex][i] > 0) {                  //
+                    temp = min + matrix[minindex][i];          //
                     if (temp < d[i])                                    //
                         d[i] = temp;                                   //
                 }                                                     //
@@ -103,13 +104,15 @@ int Topology::Dijkstra(int begin_index)
         }                                                          //
     } while (minindex < 10000);                                   //
                                                                  // Вывод кратчайших расстояний до вершин
- /*   printf("\nКратчайшие расстояния до вершин: \n");
-    for (int i = 1; i < countComps + 1; i++)
+    cout << "\nКратчайшие расстояния от узлов до узла " << begin_index + 1 << endl;
+    for (int i = 1; i < matrix.size() + 1; i++)
         printf("%5d ", i);
-    cout << "\n---------------------------------\n";*/
-    for (int i = 0; i < countComps; i++) {                  //
+    cout << "\n---------------------------------\n";
+    for (int i = 0; i < matrix.size(); i++) {                  //
+        printf("%5d ", d[i]);
         summ += d[i];                                      //
     }                                                     //
+    cout << "Общая сумма по строке - " << summ;
     return summ;                                         //
 }
 
@@ -156,37 +159,65 @@ vector<int> Topology::findMaxCountConnections() {
     return tempvec;
 }
 
-void Matrixrecursion(int currentComp, vector<vector<int>>& MainMatrix, vector<int>&CompsVisited, vector<vector<int>> & HalfMatrix) {
-    for (int i = currentComp; i < MainMatrix.size(); i++) {
-        for (int j = 0; j < MainMatrix.size(); j++) {
-            if (MainMatrix[i][j] == 1) {
-                if (!CompsVisited[j]) {
-                    CompsVisited[j] = 1; // помечаем посещенной
-                    HalfMatrix.resize(HalfMatrix.size() + 1); // добавляем в матрицу
-                    HalfMatrix[HalfMatrix.size() - 1].resize(HalfMatrix.size() + 1);
-                    HalfMatrix[HalfMatrix.size() - 1][]
-                    Matrixrecursion(i, MainMatrix, CompsVisited, HalfMatrix);
+vector<vector<int>> Matrixrecursion(int currentComp, vector<vector<int>>& MainMatrix, vector<int>& CompsVisited, vector<vector<int>>& HalfMatrix, int currentRow, map<int,int>& CompsHalfMatrix) {
+    for (int j = 0; j < MainMatrix.size(); j++) {
+        if (MainMatrix[currentComp][j] == 1) {
+            if (!CompsVisited[j]) {
+                CompsVisited[j] = 1; // помечаем посещенной
+                if (CompsHalfMatrix.find(currentRow) != CompsHalfMatrix.end()) {
+                    currentRow += offset;
+                    offset = 0;
                 }
+                CompsHalfMatrix[currentRow] = currentComp;
+                HalfMatrix.resize(HalfMatrix.size() + 1); // расширяем матрицу
+                for (int i = 0; i < HalfMatrix.size(); i++) {
+                    HalfMatrix[i].resize(HalfMatrix.size());
+                }
+                HalfMatrix[currentRow][HalfMatrix.size() - 1] = 1;
+                HalfMatrix[HalfMatrix.size() - 1][currentRow] = 1;
+                Matrixrecursion(j, MainMatrix, CompsVisited, HalfMatrix, currentRow + 1, CompsHalfMatrix);
+                offset++;
             }
         }
     }
+    return HalfMatrix;
 }
 
-void getHalfMatrix(vector<vector<int>>& matrix, vector<int>compsStorage) {
+int getStorage(vector<vector<int>>& matrix, vector<int>compsStorage, int potentionalStorage) {
     vector<vector<int>> halfMatrix;
     vector<int> CompsIndex;
+    vector<int> tempvec;
+    vector<vector<int>> summComps;
     vector<int> CompsVisited(matrix.size(), 0);
-    int potentialComp = compsStorage[0] - 1;
-    CompsVisited[1] = true;
+    map<int, int> CompsHalfMatrix;
+    CompsVisited[compsStorage[0]] = true;
+    CompsVisited[compsStorage[1]] = true;
     halfMatrix.resize(1);
     halfMatrix[0].resize(1);
-    Matrixrecursion(potentialComp, matrix, CompsVisited, halfMatrix);
+    halfMatrix = Matrixrecursion(potentionalStorage, matrix, CompsVisited, halfMatrix, 0, CompsHalfMatrix);
+    cout << endl;
+    for (auto& Connection : halfMatrix) {
+        for (auto& currentComp : Connection)
+            cout << currentComp << " ";
+        cout << endl;
+    }
     system("pause");
+    for (int i = 0; i < halfMatrix.size(); i++) {
+        tempvec.push_back(Dijkstra(i, halfMatrix));
+        tempvec.push_back(i);
+        summComps.push_back(tempvec);
+        tempvec.clear();
+    }
+    sort(summComps.begin(), summComps.begin() + summComps.size());
+    system("pause");
+    return CompsHalfMatrix.find(summComps[0][1])->second;
+
 }
 
 void Topology::checkAllComps() {
     vector<int> tempvec;
     vector <int> CompsMaxLink;
+    vector<int> potentialStorage;
     
     if (countComps == 3) {
         CompsMaxLink = findMaxCountConnections();
@@ -196,16 +227,18 @@ void Topology::checkAllComps() {
     }
 
     for (int i = 0; i < countComps; i++) {
-        tempvec.push_back(Dijkstra(i));
+        tempvec.push_back(Dijkstra(i, CompsConnections));
         tempvec.push_back(i);
         summComps.push_back(tempvec);
         tempvec.clear();
     }
     sort(summComps.begin(), summComps.begin() + summComps.size());
-    CompStorage.push_back(summComps[0][1] + 1);
-    CompStorage.push_back(summComps[1][1] + 1);
-    sort(CompStorage.begin(), CompStorage.begin() + CompStorage.size());
-    getHalfMatrix(CompsConnections, CompStorage[0]);
+    potentialStorage.push_back(summComps[0][1]);
+    potentialStorage.push_back(summComps[1][1]);
+    sort(potentialStorage.begin(), potentialStorage.begin() + potentialStorage.size());
+    cout << getStorage(CompsConnections, potentialStorage, potentialStorage[0]) + 1;
+    cout << " ";
+    cout << getStorage(CompsConnections, potentialStorage, potentialStorage[1]) + 1;
 }
 
 void Topology::printSumms() {
