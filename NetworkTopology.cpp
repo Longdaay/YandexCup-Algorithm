@@ -10,59 +10,59 @@ int offset = 0;
 
 class Topology {
 public:
-	Topology();
-	void setCompsConnections();
-	void printConnections();
+    Topology();
+    void setCompsConnections();
+    void printConnections();
     void checkAllComps();
     void printSumms();
     vector <int> findMaxCountConnections();
     void printStorage();
 private:
-	int countComps;
-	vector <vector<int>> CompsConnections;
+    int countComps;
+    vector <vector<int>> CompsConnections;
     vector <vector<int>> summComps;
     vector <int> CompStorage;
 };
 
 Topology::Topology() {       // конструктор
-	setCompsConnections();  //
+    setCompsConnections();  //
 }
 void Topology::setCompsConnections() {                                             // получаем из файла соединени€ узлов
-	ifstream in;                                                                  // поток
-	in.open("input.txt");                                                        // открывем файл
-	vector<int> CompConnection;                                                 // вектор дл€ одного соединени€
-	int temp;                                                                  // переменна€ узла
-	char t;                                                                   //
-	int iter = 0;                                                            // итератор
-	in >> countComps;                                                       // получаем количество узлов
+    ifstream in;                                                                  // поток
+    in.open("input.txt");                                                        // открывем файл
+    vector<int> CompConnection;                                                 // вектор дл€ одного соединени€
+    int temp;                                                                  // переменна€ узла
+    char t;                                                                   //
+    int iter = 0;                                                            // итератор
+    in >> countComps;                                                       // получаем количество узлов
 
-	CompsConnections.resize(countComps);                                  // расшир€ем матрицу смежности узлов
-	for (int i = 0; i < countComps; i++)                                 //
-		CompsConnections[i].resize(countComps);                         //
+    CompsConnections.resize(countComps);                                  // расшир€ем матрицу смежности узлов
+    for (int i = 0; i < countComps; i++)                                 //
+        CompsConnections[i].resize(countComps);                         //
 
-	while (iter < countComps - 1) {                                    // пока не дошли до конечного соединени€
-		CompConnection.clear();                                       //
-		in >> temp;                                                  // считываем первый узел
-		CompConnection.push_back(temp);                             //  в массив
-		in.get(t);                                                 // считываем символ
-		while (t != '\n') {                                       // пока символ не конец строки
-			if (!in.eof()) {                                     // если не достигли конца файла
-				in >> temp;                                     // считываем второй узел
-				CompConnection.push_back(temp);                // в массив
-				in.get(t);                                    // считываем символ
-			}
-			else                                            // иначе
-				t = '\n';                                  // присваиваем конец строки
-		}
+    while (iter < countComps - 1) {                                    // пока не дошли до конечного соединени€
+        CompConnection.clear();                                       //
+        in >> temp;                                                  // считываем первый узел
+        CompConnection.push_back(temp);                             //  в массив
+        in.get(t);                                                 // считываем символ
+        while (t != '\n') {                                       // пока символ не конец строки
+            if (!in.eof()) {                                     // если не достигли конца файла
+                in >> temp;                                     // считываем второй узел
+                CompConnection.push_back(temp);                // в массив
+                in.get(t);                                    // считываем символ
+            }
+            else                                            // иначе
+                t = '\n';                                  // присваиваем конец строки
+        }
 
-		int first = CompConnection[0] - 1;               // перва€ позици€
-		int second = CompConnection[1] - 1;             // втора€ позици€
-		CompsConnections[first][second] = 1;           // заполнили матрицу смежности
-		CompsConnections[second][first] = 1;          //
-		
-		iter++;                                     // добавили к итератору
-	}                                              //
-	in.close();                                   //
+        int first = CompConnection[0] - 1;               // перва€ позици€
+        int second = CompConnection[1] - 1;             // втора€ позици€
+        CompsConnections[first][second] = 1;           // заполнили матрицу смежности
+        CompsConnections[second][first] = 1;          //
+
+        iter++;                                     // добавили к итератору
+    }                                              //
+    in.close();                                   //
 }
 
 int Dijkstra(int begin_index, vector<vector<int>>& matrix)
@@ -89,9 +89,9 @@ int Dijkstra(int begin_index, vector<vector<int>>& matrix)
                 minindex = i;                                                     //
             }
         }
-                                                                               // ƒобавл€ем найденный минимальный вес
-                                                                              // к текущему весу вершины
-                                                                             // и сравниваем с текущим минимальным весом вершины
+        // ƒобавл€ем найденный минимальный вес
+       // к текущему весу вершины
+      // и сравниваем с текущим минимальным весом вершины
         if (minindex != 10000) {                                            //
             for (int i = 0; i < matrix.size(); i++) {                         //
                 if (matrix[minindex][i] > 0) {                  //
@@ -104,15 +104,15 @@ int Dijkstra(int begin_index, vector<vector<int>>& matrix)
         }                                                          //
     } while (minindex < 10000);                                   //
                                                                  // ¬ывод кратчайших рассто€ний до вершин
-    /*cout << "\n ратчайшие рассто€ни€ от узлов до узла " << begin_index + 1 << endl;
+    cout << "\n ратчайшие рассто€ни€ от узлов до узла " << begin_index + 1 << endl;
     for (int i = 1; i < matrix.size() + 1; i++)
         printf("%5d ", i);
-    cout << "\n---------------------------------\n";*/
+    cout << "\n---------------------------------\n";
     for (int i = 0; i < matrix.size(); i++) {                  //
-        //printf("%5d ", d[i]);
+        printf("%5d ", d[i]);
         summ += d[i];                                      //
     }                                                     //
-    //cout << "ќбща€ сумма по строке - " << summ;
+    cout << "ќбща€ сумма по строке - " << summ;
     return summ;                                         //
 }
 
@@ -131,12 +131,12 @@ vector<int> Topology::findMaxCountConnections() {
         summ = 0;
     }
     sort(summsRows.begin(), summsRows.begin() + summsRows.size());
-   /*for (auto& Connection : summsRows) {
-        for (auto& currentComp : Connection)
-            cout << currentComp << " ";
-        cout << endl;
-    }
-    cout << endl;*/
+    /*for (auto& Connection : summsRows) {
+         for (auto& currentComp : Connection)
+             cout << currentComp << " ";
+         cout << endl;
+     }
+     cout << endl;*/
     if (countComps == 3) {
         tempvec.push_back(summsRows[0][1]);
         tempvec.push_back(summsRows[1][1]);
@@ -159,16 +159,16 @@ vector<int> Topology::findMaxCountConnections() {
     return tempvec;
 }
 
-vector<vector<int>> Matrixrecursion(int currentComp, vector<vector<int>>& MainMatrix, vector<int>& CompsVisited, vector<vector<int>>& HalfMatrix, int currentRow, map<int,int>& CompsHalfMatrix) {
-    if (CompsHalfMatrix.find(currentRow) != CompsHalfMatrix.end()) {
-        currentRow += offset;
-        offset = 0;
-    }
-    CompsHalfMatrix[currentRow] = currentComp;
+vector<vector<int>> Matrixrecursion(int currentComp, vector<vector<int>>& MainMatrix, vector<int>& CompsVisited, vector<vector<int>>& HalfMatrix, int currentRow, map<int, int>& CompsHalfMatrix) {
     for (int j = 0; j < MainMatrix.size(); j++) {
         if (MainMatrix[currentComp][j] == 1) {
             if (!CompsVisited[j]) {
                 CompsVisited[j] = 1; // помечаем посещенной
+                if (CompsHalfMatrix.find(currentRow) != CompsHalfMatrix.end()) {
+                    currentRow += offset;
+                    offset = 0;
+                }
+                CompsHalfMatrix[currentRow] = currentComp;
                 HalfMatrix.resize(HalfMatrix.size() + 1); // расшир€ем матрицу
                 for (int i = 0; i < HalfMatrix.size(); i++) {
                     HalfMatrix[i].resize(HalfMatrix.size());
@@ -194,15 +194,14 @@ int getStorage(vector<vector<int>>& matrix, vector<int>compsStorage, int potenti
     CompsVisited[compsStorage[1]] = true;
     halfMatrix.resize(1);
     halfMatrix[0].resize(1);
-    offset = 0;
     halfMatrix = Matrixrecursion(potentionalStorage, matrix, CompsVisited, halfMatrix, 0, CompsHalfMatrix);
-    //cout << endl;
-    /*for (auto& Connection : halfMatrix) {
+    cout << endl;
+    for (auto& Connection : halfMatrix) {
         for (auto& currentComp : Connection)
             cout << currentComp << " ";
         cout << endl;
-    }*/
-    //system("pause");
+    }
+    system("pause");
     for (int i = 0; i < halfMatrix.size(); i++) {
         tempvec.push_back(Dijkstra(i, halfMatrix));
         tempvec.push_back(i);
@@ -210,7 +209,7 @@ int getStorage(vector<vector<int>>& matrix, vector<int>compsStorage, int potenti
         tempvec.clear();
     }
     sort(summComps.begin(), summComps.begin() + summComps.size());
-    //system("pause");
+    system("pause");
     return CompsHalfMatrix.find(summComps[0][1])->second;
 
 }
@@ -219,7 +218,7 @@ void Topology::checkAllComps() {
     vector<int> tempvec;
     vector <int> CompsMaxLink;
     vector<int> potentialStorage;
-    
+
     if (countComps == 3) {
         CompsMaxLink = findMaxCountConnections();
         CompStorage.push_back(CompsMaxLink[0] + 1);
@@ -242,8 +241,6 @@ void Topology::checkAllComps() {
     cout << getStorage(CompsConnections, potentialStorage, potentialStorage[1]) + 1;
 }
 
-
-
 void Topology::printSumms() {
     for (auto& Connection : summComps) {
         for (auto& currentComp : Connection)
@@ -253,11 +250,11 @@ void Topology::printSumms() {
 }
 
 void Topology::printConnections() {
-	for (auto& Connection : CompsConnections) {
-		for (auto& currentComp : Connection)
-			cout << currentComp << " ";
-		cout << endl;
-	}
+    for (auto& Connection : CompsConnections) {
+        for (auto& currentComp : Connection)
+            cout << currentComp << " ";
+        cout << endl;
+    }
 }
 
 void Topology::printStorage() {
@@ -267,9 +264,9 @@ void Topology::printStorage() {
 }
 
 int main() {
-	setlocale(0, "");
-	Topology tp;
+    setlocale(0, "");
+    Topology tp;
     tp.checkAllComps();
     tp.printStorage();
-	return 0;
+    return 0;
 }
