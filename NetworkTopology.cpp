@@ -4,6 +4,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include <algorithm>
 #define MAXWEIGHTVALUE 10000
+#include <set>
 
 using namespace std;
 int max_lambda = 0;
@@ -158,6 +159,8 @@ void printMatrix(const vector<vector<int>>& matrix) {
 }
 
 void Topology::checkAllComps() {
+    printMatrix(CompsConnections);
+    system("pause");
     vector<vector<int>> compsLambda;
     vector<vector<int>> potentialStorage;
     int i = 0;
@@ -239,6 +242,12 @@ int main() {
     Topology tp;
     tp.checkAllComps();
     //tp.printStorage();
-
+    set<int> value;
+    value.insert(3);
+    value.insert(4);
+    for (auto it = value.rbegin(); it != value.rend(); ++it)
+        cout << *it << " ";
+    auto val = value.rbegin();
+    //int f = value.extract(--(value.end()));
     return 0;
 }
