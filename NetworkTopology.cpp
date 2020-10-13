@@ -1,4 +1,3 @@
-//utf-8
 /*Задача Е. ТОПОЛОГИЯ СЕТИ.
 * Условие задачи:
 */
@@ -27,8 +26,8 @@ private:
     vector <vector<int>> computersConnectionsMatrix;
 };
 
-Topology::Topology() {       // конструктор
-    setComputersConnectionsMatrix();  //
+Topology::Topology() { // конструктор
+    setComputersConnectionsMatrix();
 }
 void Topology::setComputersConnectionsMatrix() {
     /*
@@ -86,61 +85,78 @@ void Topology::setComputersConnectionsMatrix() {
 
 int Topology::Dijkstra(int begin_index, int trigger) {
     /*
-    * Алгоритм Дейкстры.
-    */
-    vector <int> countSteps_computerToAll;                                                                             // массив расстояний до всех узлов от текущего начального узла
-    countSteps_computerToAll.resize(computersConnectionsMatrix.size());                                                                           //
-    vector <int> computers_visited;                                                                                // массив посещенных узлов
-    computers_visited.resize(computersConnectionsMatrix.size());                                                                         //
-    int temp, minValueIndex, minWeightToComputer;                                                                     //
-    int i = 1;//
+    * Алгоритм Дейкстры. Используется лишь часть алгоритма, а именно расчет всех путей от заданной точки ко всем точкам в графе. Алгоритм работает со взвешенными графами,
+    * значения у которых неотрицательны. Дополнительное условие состоит в установке, так называемого, триггера - узла, через который пройти нельзя.
+    * Алгоритм заключается в следующем: 
+    *   Инициализация всех расстояний компьютера максимальным значением, кроме искомого (у искомого расстояние = 0)
+    *   Поиск текущего минимального непосещенного веса компьютера и присваивание его номера и расстоянния
+    *   Поиск связей этого компьютера с другими и сравнение полученного сложение путей к связному компьютеру и исходное расстояние связного компьютера
+    *   Помечаем этот компьютер как посещенный и возвращаемся в цикл снова.
+    *   Сортировка полученных расстояний
+    *   Поиск максимального расстояния.
+    */   
+
+    vector <int> countSteps_computerToAll;// список, размерностью количества компьютеров, который хранит пути от заданной точке ко всем.
+    countSteps_computerToAll.resize(computersConnectionsMatrix.size());
+    vector <int> computers_visited; //Есть список посещенных компьютеров, который необходим для обработки всех компьютеров(1 - компьютер не был посещен).
+    computers_visited.resize(computersConnectionsMatrix.size());
+    int temp, minValueIndex, minWeightToComputer;
+    int i = 1;
 
 
 
-                                                                                               // инициализация узлов и расстояний
-    for (int i = 0; i < computersConnectionsMatrix.size(); i++) {                                                    //
-        countSteps_computerToAll[i] = MAXWEIGHTVALUE;                                                                        //
-        computers_visited[i] = 1;                                                                           //
+    // Первоначально необходимо расстояние до каждого элемента указать как максимально большое значение (в идеале бесконечность);
+    // постепенно эти значения будут заменятся на корректные значения расстояний.
+    for (int i = 0; i < computersConnectionsMatrix.size(); i++) {
+        countSteps_computerToAll[i] = MAXWEIGHTVALUE;
+        computers_visited[i] = 1;
     }
-    countSteps_computerToAll[begin_index] = 0;                                                                   //
-    computers_visited[trigger] = 0;
+    countSteps_computerToAll[begin_index] = 0; // После этого необходимо указать расстояние у искомой точки равное 0 (т.е. мы уже в ней находимся, расстояние 0)
+    computers_visited[trigger] = 0; // Так же помечаем триггер, как посещенный узел, что бы алгоритм не проходил через него
 
 
-
-    // Шаг алгоритма
-    do {                                                                                //
-        minValueIndex = MAXWEIGHTVALUE;                                                              //
-        minWeightToComputer = MAXWEIGHTVALUE;                                                                  //
-        for (int i = 0; i < computersConnectionsMatrix.size(); i++) {                                       // Если вершину ещё не обошли и вес меньше min
-            if ((computers_visited[i] == 1) && (countSteps_computerToAll[i] < minWeightToComputer)) {                                      // Переприсваиваем значения
-                minWeightToComputer = countSteps_computerToAll[i];                                                        //
-                minValueIndex = i;                                                     //
+    /*
+    * Дальше задается цикл с постусловием, в котором первом делом инициализируем максимальными значениями номер компьютера с минимальным значением, а потом и расстояние этого
+    * компьютера. Далее запускаем цикл по поиску непосещенной минимальной вершины (в 1 раз это будет начальная точка - дальше зависит от весов компьютеров)
+    * Если компьютер не был еще посещен и его значение расстояния меньше, чем номинальное, то мы присваиваем его номер и его расстояние соответсвующим переменным.
+    * затем мы снова задаем цикл, в котором производим поиск связей этого компьютера с другими и производим сравнение полученного сложение путей к связному компьютеру и исходное расстояние связного компьютера
+    * Проходим этим циклом по всем связей такого компьютера и после помечаем этот компьютер как посещенный и возвращаемся в цикл снова
+    */
+    do {
+        minValueIndex = MAXWEIGHTVALUE; // задаем максимально возможное значение индексу
+        minWeightToComputer = MAXWEIGHTVALUE; // задаем максимально возможное значение расстояние
+        for (int i = 0; i < computersConnectionsMatrix.size(); i++) { // проходим циклом по всем компьютерам
+            if ((computers_visited[i] == 1) && (countSteps_computerToAll[i] < minWeightToComputer)) { // если нашли непосещенный компьютер с минимальным весом, то присваиваем его номер и его расстояние соответсвующим переменным
+                minWeightToComputer = countSteps_computerToAll[i]; // минимальное расстояние такого компьютера
+                minValueIndex = i; // индекс такого компьютера
             }
         }
-        // Добавляем найденный минимальный вес
-       // к текущему весу вершины
-      // и сравниваем с текущим минимальным весом вершины
-        if (minValueIndex != MAXWEIGHTVALUE) {                                            //
-            for (int i = 0; i < computersConnectionsMatrix.size(); i++) {                         //
-                if (i == trigger)
-                    continue;
-                if (computersConnectionsMatrix[minValueIndex][i] > 0) {                  //
-                    temp = minWeightToComputer + computersConnectionsMatrix[minValueIndex][i];          //
-                    if (temp < countSteps_computerToAll[i])                                    //
-                        countSteps_computerToAll[i] = temp;                                   //
-                }
-                //
-            }                                                        //
-            computers_visited[minValueIndex] = 0;                                        //
-        }                                                          //
-    } while (minValueIndex < MAXWEIGHTVALUE);                                   //
 
+        // цикл поиска связей этого компьютера с другими
+        if (minValueIndex != MAXWEIGHTVALUE) { // проверка на конец просчета всех путей (исходя из предыдущего цикла - если все вершины будут посещены, то присваиваемое значение максимально возможное не изменится)
+            for (int i = 0; i < computersConnectionsMatrix.size(); i++) {
+                if (i == trigger) // если достигли триггера, то итерируемся дальше
+                    continue;
+                if (computersConnectionsMatrix[minValueIndex][i] > 0) { // если есть связь с другим компьютером
+                    temp = minWeightToComputer + computersConnectionsMatrix[minValueIndex][i]; // Добавляем найденный минимальный вес к текущему весу вершины
+                    if (temp < countSteps_computerToAll[i]) //и сравниваем с текущим минимальным весом вершины
+                        countSteps_computerToAll[i] = temp; // если меньше, то присваиваем
+                }
+            }
+            computers_visited[minValueIndex] = 0; // помечаем компьютер как посещенный
+        }
+    } while (minValueIndex < MAXWEIGHTVALUE); // пока не прошли все компьютеры
+
+    //* Сортировка полученных расстояний
     sort(countSteps_computerToAll.begin(), countSteps_computerToAll.begin() + countSteps_computerToAll.size());
+
+    //* Поиск максимального расстояния. Загвоздка заключается в следующем. По причине наличия триггера расстояния до компьютеров, где триггер был элементом в цепочке,
+    //* равны максимально возможному значению. Поэтому необходимо организовать цикл в котором следует проверят текущий элемент с максимально возможным значением.
+    //* если он равен, итератору добавляем шаг + 1. Как только мы находим значение не равное максимально возможному значению, выходим из цикла и выводим максимальный элемент.
     while (countSteps_computerToAll[countSteps_computerToAll.size() - i] == MAXWEIGHTVALUE) {
         i++;
     }
     return countSteps_computerToAll[countSteps_computerToAll.size() - i];
-    //
 }
 
 void Matrixrecursion(int currentComp, vector<vector<int>>& MainMatrix, vector<int>& computers_visited, int depth) {
