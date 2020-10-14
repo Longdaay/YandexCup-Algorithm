@@ -139,7 +139,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="BIGdata.cpp" />
+    <ClCompile Include="LotteryTicket.cpp" />
     <ClCompile Include="NetworkTopology.cpp" />
+    <ClCompile Include="Palindrome.cpp" />
+    <ClCompile Include="SplitThatAll.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -1,3 +1,35 @@
+﻿/* Задача c: Раздели их все
+* 	Ограничение времени		1 секунда
+*	Ограничение памяти		512Mb
+*	Ввод					стандартный ввод или input.txt
+*	Вывод					стандартный вывод или output.txt
+* 
+* Условие задачи:
+* После работы Оля и Толя решили вместе сходить в тир. После прохождения вводного инструктажа и получения оружия они оказались на позициях для стрельбы,
+* а напротив них находятся n мишеней. Все мишени можно считать фигурами, нанесёнными на бесконечную плоскость, при этом каждая мишень является
+* кругом или прямоугольником, мишени могут накладываться и пересекаться произвольным образом.
+* Перед тем как начать стрельбу, Оля и Толя хотят убедиться, что они смогут однозначно идентифицировать результаты своих выстрелов.
+* Для этого они договорились провести прямую, которая поделит плоскость с мишенями на две части. Однако, чтобы никому не было обидно,
+* они хотят провести прямую таким образом, чтобы каждая мишень была поделена ровно пополам, то есть для каждого круга и каждого прямоугольника
+* должно быть верно, что прямая делит его на две фигуры равной площади.
+* Когда Оля и Толя наконец закончили прорабатывать все условия разделения мишеней на две части, они начали сомневаться,
+* что провести такую прямую вообще возможно, и просят вас ответить на этот вопрос.
+* 
+* Формат ввода
+* В первой строке входных данных записано целое число n (1 ≤ n ≤ 100 000) — количество мишеней. Каждая из последующих n строк содержит целое 
+* число t_i (0 ≤ t_i ≤ 1), обозначающее тип мишени. Если t_i=0, то мишень является кругом и далее следуют три целых числа r_i, x_i и y_i,
+* определяющие радиус и координаты центра круга соответственно (1 ≤ r_i ≤ 1000, −10 000 ≤ x_i,y_i ≤ 10 000). Если же t_i=1, то мишень является прямоугольником,
+* который затем определяют восемь целых чисел x_1,i, y_1,i, x_2,i, y_2,i, x_3,i, y_3,i, x_4,i, y_4,i — координаты всех четырёх вершин (−10 000 ≤ x_j,i,y_j,i ≤ 10 000),
+* перечисленных в порядке обхода по часовой стрелке или против часовой стрелки. Гарантируется, что данные четыре вершины образуют прямоугольник ненулевой площади.
+* 
+* Формат вывода
+* Если существует прямая, которая поделит каждый из имеющихся кругов и прямоугольников на две части одинаковой площади, выведите “Yes”. В противном случае выведите “No”.
+*/
+
+/*
+* Логика построена на перебор всех координат и проверку, лежат ли они на одной прямой. Для этого необходимо расчитать центры всех фигур.
+* Ниже будет представлена формула для расчета центров и проверку на проводение прямой через их центры.
+*/
 #include <iostream>
 #include <vector>
 #include <fstream>
@@ -10,8 +42,8 @@ public:
 	void setForms();
 	bool isLineThoughtCenters();
 private:
-	vector<vector<double>>Forms;
-	int formsCount;
+	vector<vector<double>>allForms_list;
+	int total_forms;
 };
 
 ShootingRange::ShootingRange() {
@@ -19,71 +51,106 @@ ShootingRange::ShootingRange() {
 }
 
 void ShootingRange::setForms() {
-	ifstream in;
-	in.open("input.txt");
-	vector<double> UserForm;
+	/*
+	* заполнение координат форм в вектора. Запись из файла происходит следующим образом: считывается первое значение (количество фигур)
+    * дальше считывается следующий символ строки. Затем организовывается цикл. Пока следующий символ не будет равен переносу строки, продолжаем считывать из файла следующее значение это фигуры.
+    * В цикле первоочередно проверяется достигли ли конца файла Если достигли, то присваиваем конец строки и выходим из цикла. Затем добавляем массив значений полученной формы в общий список форм.  
+	*/
+	ifstream in; // открываем поток для считывания данных
+	in.open("input.txt");  // открываем файл
+	vector<double> valueForm_list; // массив отельной фигуры
 	int temp;
 	char t;
-	int iter = 0;
-	in >> formsCount;
-	while (iter < formsCount) {
-		UserForm.clear();
-		in >> temp;
-		UserForm.push_back(temp);
-		in.get(t);
-		while (t != '\n') {
-			if (!in.eof()) {
-				in >> temp;
-				UserForm.push_back(temp);
-				in.get(t);
+	int iterator = 0;
+
+	in >> total_forms; // получаем количество фигур
+	while (iterator < total_forms) { // пока не считали все фигуры
+		valueForm_list.clear(); //очищаем массив фигуры
+		in >> temp; // считываем первое значение
+		valueForm_list.push_back(temp); // в массив
+		in.get(t); // считываем символ
+		while (t != '\n') { // пока символ не конец строки
+			if (!in.eof()) { // если не достигли конца файла
+				in >> temp;  // считываем следующее значение
+				valueForm_list.push_back(temp); // в массив
+				in.get(t); // считываем символ
 			}
-			else
-				t = '\n';
+			else // иначе
+				t = '\n'; // присваиваем конец строки
 		}
-		Forms.push_back(UserForm);
-		iter++;
+		allForms_list.push_back(valueForm_list); // заносим полученные значения фигуры
+		iterator++; // добавляем итерацию
 	}
-	in.close();
+	in.close(); // закрываем поток
 }
 
 bool ShootingRange::isLineThoughtCenters() {
-	vector <double> tempCenter;
-	vector < vector<double>> tempCenters;
-	double x1, x2, y1, y2;
-	double first, second, third, fourth;
-	for (auto& token : Forms) {
-		tempCenter.clear();
-		switch (int(token[0])) {
+	/*
+	* Проверка фигур на проведение линии через их центры. 
+	* Алгоритм состоит в следующем:
+	*	Записываем центры всех фигур в общий массив цетров:
+	*		для круга - просто записываем ее координаты из параметров фигуры
+	*		для прямоугольника - расчитываем центр по формуле
+	*					p0
+	*					+-------+
+	*					|       |
+	*					|       |
+	*					+-------+
+	*							 p1
+	*			center.x = (p0.x + p1.x) / 2
+	*			center.y = (p0.y + p1.y) / 2
+	*	Сортируем массив центров по возрастанию
+	*	Присваиваем координаты x1 y1 - для начальной фигуры; x2 y2 - для конечной фигуры
+	*	Проходим циклом каждую координату всех фигур и проверяем, лежат ли они на одной плоскости по формуле: 
+	*		(x - x1)      (y - y1)
+	*		--------   =  --------
+	*		(x2 - x1)     (y2 - y1)
+	*	Если равны начинаем новую итерацию, иначе выводим false - не лежат на одной прямой.
+	*/
+	vector <double> center_coordinate_pair_list; // список координат центра отдельной фигуры
+	vector < vector<double>> AllCenters_coordinate_list; // список координат центров всех фигур
+	double x1, x2, y1, y2; // переменные для координат
+	double first, second, third, fourth; // переменные для вычислений
+	for (auto& token : allForms_list) { // проходим все фигуры
+		center_coordinate_pair_list.clear();
+		switch (int(token[0])) { // проверяем первое значение 0 - круг, 1 - прямоугольник
 		case 0:
-			tempCenter.push_back(token[2]);
-			tempCenter.push_back(token[3]);
-			tempCenters.push_back(tempCenter);
+			center_coordinate_pair_list.push_back(token[2]); // записываем 1ую координату
+			center_coordinate_pair_list.push_back(token[3]); // 2ую координату
+			AllCenters_coordinate_list.push_back(center_coordinate_pair_list); // записываем их в общий список
 			break;
 		case 1:
-			tempCenter.push_back((token[1] + token[5]) / 2.0);
-			tempCenter.push_back((token[2] + token[6]) / 2.0);
-			tempCenters.push_back(tempCenter);
+			center_coordinate_pair_list.push_back((token[1] + token[5]) / 2.0); // расчитываем 1ую координату
+			center_coordinate_pair_list.push_back((token[2] + token[6]) / 2.0); // 2ую координату
+			AllCenters_coordinate_list.push_back(center_coordinate_pair_list); // записываем их в общий список
 			break;
 		default:
 			break;
 		}
 	}
 
-	sort(tempCenters.begin(), tempCenters.begin() + tempCenters.size());
-	if (tempCenters.size() == 1)
+	sort(AllCenters_coordinate_list.begin(), AllCenters_coordinate_list.begin() + AllCenters_coordinate_list.size()); // сортируем список
+	if (AllCenters_coordinate_list.size() == 1) // если фигура всего одна - сразу возвращаем true.
 		return true;
-	tempCenter = tempCenters[0];
-	x1 = tempCenter[0];
-	y1 = tempCenter[1];
-	tempCenter = tempCenters[tempCenters.size() - 1];
-	x2 = tempCenter[0];
-	y2 = tempCenter[1];
-	for (auto& token : tempCenters) {
+
+	center_coordinate_pair_list = AllCenters_coordinate_list[0]; //Присваиваем координаты 1ой фигуры для x1 y1
+	x1 = center_coordinate_pair_list[0];
+	y1 = center_coordinate_pair_list[1];
+
+	center_coordinate_pair_list = AllCenters_coordinate_list[AllCenters_coordinate_list.size() - 1]; //Присваиваем координаты 2ой фигуры для x2 y2
+	x2 = center_coordinate_pair_list[0];
+	y2 = center_coordinate_pair_list[1];
+
+	for (auto& token : AllCenters_coordinate_list) { // проходим циклом по всем координатам центров
+		/*
+		* В каждом расчете организована проверка на 0, что бы избежать деления на 0; заместо этого
+		* результату вычисления присваивается 1.
+		*/
 		token[0] - x1 == 0 ? first = 1 : first = token[0] - x1;
 		x2 - x1 == 0 ? second = 1 : second = x2 - x1;
 		token[1] - y1 == 0 ? third = 1 : third = token[1] - y1;
 		y2 - y1 == 0 ? fourth = 1 : fourth = y2 - y1;
-		if ((first) / (second) != (third) / (fourth))
+		if ((first) / (second) != (third) / (fourth)) // если неравны т.е. точки не лежат на одной прямой, то возвращаем false. Иначе - следующая итерация 
 			return false;
 	}
 	return true;

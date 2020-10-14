@@ -1,11 +1,37 @@
+﻿/* Задача А. Лотерейный билет
+*	Ограничение времени		1 секунда
+*	Ограничение памяти		512Mb
+*	Ввод					стандартный ввод или input.txt
+*	Вывод					стандартный вывод или output.txt
+* 
+* Условие задачи:
+* На различных мероприятиях команда стажировок регулярно разыгрывает призы в лотерею. Организаторы выбирают 10
+* случайных различных чисел от 1 до 32. Каждому участнику выдается лотерейный билет, на котором записаны 
+* 6 различных чисел от 1 до 32. Билет считается выигрышным, если в нем есть не менее 3
+* выбранных организаторами числа.
+* Помогите Юле, напишите программу, которая будет сообщать, какие билеты выигрышные.
+*
+* Формат ввода:
+* В первой строке входных данных записаны 10 различных целых чисел ai (1 ≤ ai ≤ 32) — выбранные организаторами числа.
+* Во второй строке записано одно целое число n (1 ≤ n ≤ 1000) — количество лотерейных билетов, выданных на мероприятии.
+* В каждой из n последующих строк записаны 6 различных целых чисел bj (1 ≤ bj ≤ 32) — числа, записанные на очередном лотерейном билета.
+* 
+* Формат вывода:
+* Выведите n строк. Для каждого лотерейного билета в порядке следования во входных данных выведите строку Lucky, если билет выигрышный, иначе выведите Unlucky.
+*
+*/
+
+/*
+* Логика построена на проверке чисел участника в загаданных организаторами числах. Проверка организована с помощью бинарного поиска. Как только получаем
+* необходимое количество совпадений или проверим до конца билет участника, проверяем количество совпадений - если необходимое количество получено - Lucky;
+* иначе Unlucky.
+*/
 #include <iostream>
-#include <set>
 #include <vector>
-#include <ctime>
 #include <algorithm>
-#define TICKETCOUNTNUMBERS 6
-#define ORGCOUNTNUMBERS 10
-#define CONTWINNUMBERS 3
+#define TICKETCOUNTNUMBERS 6 // количество чисел в билете
+#define ORGCOUNTNUMBERS 10 // количество загаданных организаторами чисел
+#define CONTWINNUMBERS 3 // выигрышное количество совпадений
 
 using namespace std;
 int Search_Binary(vector<int>& arr, int left, int right, int key);
@@ -14,67 +40,83 @@ class Lotery
 {
 public:
 	Lotery();
-	void setVecOrg();
-	void setUserTickets();
-	void checkTickets();
+	void setHostNumbes_list();
+	void setParticipantTickets_list();
+	void checkParticipantTickets();
 private:
-	vector<int> vecOrgNumbers;
-	int ticketCount;
-	vector<vector<int>> UserTikets;
+	vector<int> hostNumbes_list;
+	int total_tikets;
+	vector<vector<int>> participantTikets_list;
 };
 
 Lotery::Lotery() {
-	setVecOrg();
-	cin >> this->ticketCount;
-	setUserTickets();
+	setHostNumbes_list(); // заполняем список числел организаторов
+	cin >> this->total_tikets; // получаем количество билетов
+	setParticipantTickets_list(); // считываем билеты участников
 }
 
-void Lotery::setVecOrg() {
-	vecOrgNumbers.clear();
-	int temp;
-	cin >> temp;
-	vecOrgNumbers.push_back(temp);
-	while (cin.peek() != '\n')
-	{
-		cin >> temp;
-		vecOrgNumbers.push_back(temp);
+void Lotery::setHostNumbes_list() {
+	/*
+	* Запись списка номеров организаторов. Считывается из потока вся строка с номерами. Из-за особенностей
+	* консольного ввода значений, сначала записывается первый номер, а остальные номера записываются в буфер.
+	* Затем организовывается цикл. Пока не дошли до конца строки, продолжать считывать номера и заполнять список.
+	*/
+	hostNumbes_list.clear();
+	int tempValue;
+	cin >> tempValue; // считываем строку и записываем первый номер
+	hostNumbes_list.push_back(tempValue); // в массив
+	while (cin.peek() != '\n') { // пока не дошли до конца строки
+		cin >> tempValue; // записываем оставшуюся часть строки и записываем следующий номер
+		hostNumbes_list.push_back(tempValue); // в массив
 	}
 }
 
-void Lotery::setUserTickets() {
+void Lotery::setParticipantTickets_list() {
+	/*
+	* Запись списка билетов участников. Проходим циклом количеством итераций равным количеству билетов.
+	* Считывается из потока вся строка билета участника. Из - за особенностей консольного ввода значений,
+	* сначала записывается первый номер, а остальные номера записываются в буфер. Затем организовывается цикл. 
+	* Пока не дошли до конца строки, продолжать считывать номера и заполнять список.
+	* Как только дошли до конца строки, добавляем считанный билет к общему списку билетов
+	*/
 	vector<int> UserTicket;
-	int temp;
-	int iter = 0;
-	while (iter < ticketCount) {
+	int tempValue;
+	int iterator = 0; // итератор
+	while (iterator < total_tikets) { // пока итерация не достигла количества билетов
 		UserTicket.clear();
-		cin >> temp;
-		UserTicket.push_back(temp);
-		while (cin.peek() != '\n')
-		{
-			cin >> temp;
-			UserTicket.push_back(temp);
+		cin >> tempValue; // считываем строку и записываем первый номер
+		UserTicket.push_back(tempValue); // в массив
+		while (cin.peek() != '\n') { // пока не дошли до конца строки
+			cin >> tempValue; // считываем оставшуюся строку и записываем следующее значение
+			UserTicket.push_back(tempValue); // в массив
 		}
-		UserTikets.push_back(UserTicket);
-		iter++;
+		participantTikets_list.push_back(UserTicket); // добавляем билет к общему списку билетов
+		iterator++;
 	}
 }
 
-void Lotery::checkTickets() {
-	sort(vecOrgNumbers.begin(), vecOrgNumbers.begin() + vecOrgNumbers.size());
-	for (auto& token : UserTikets) {
-		int samenumbes = 0;
+void Lotery::checkParticipantTickets() {
+	/*
+	* Проверка билетов участников на выигрышность. Организовывается цикл по билетам и в каждом билете
+	* каждое число и производится поиск по номерам организаторов. Если такое число находится, то добавляется 1
+	* к счетчику совпадений. Цикл останавливается, если было достигнуто необходимое количество совпадений или
+	* все номера будут просмотрены. Если количество совпадений достигнуто - Lucky, иначе - Unlucky.
+	*/
+	sort(hostNumbes_list.begin(), hostNumbes_list.begin() + hostNumbes_list.size()); // сортировка
+	for (auto& token : participantTikets_list) { // проходим по всем билетам
+		int coincidences_count = 0; // количество совпадений
 		bool stop = true;
-		int i = 0;
-		while (i < token.size() && stop) {
-			if (samenumbes == CONTWINNUMBERS) {
+		int iterator = 0;
+		while (iterator < token.size() && stop) { // пока не дошли до конца билета
+			if (coincidences_count == CONTWINNUMBERS) {
 				stop = false;
 				break;
 			}
-			if (Search_Binary(vecOrgNumbers, 0, vecOrgNumbers.size() - 1, token[i]) >= 0)
-				samenumbes++;
-			i++;
+			if (Search_Binary(hostNumbes_list, 0, hostNumbes_list.size() - 1, token[iterator]) >= 0) // проверка числа бинарным поиском
+				coincidences_count++; // если есть совпадение, добавляем
+			iterator++; // новая итерация
 		}
-		if (samenumbes >= 3)
+		if (coincidences_count >= CONTWINNUMBERS)
 			cout << "Lucky\n";
 		else
 			cout << "Unlucky\n";
@@ -82,25 +124,34 @@ void Lotery::checkTickets() {
 }
 
 int Search_Binary(vector<int>& arr, int left, int right, int key) {
+	/*
+	* Бинарный поиск. Алгоритм бинарного поиска основан на поиске искомого числа в изменяющихся границах.
+	* Находится средний элемент списка и сравнивается с искомым значением: 
+	*	Если искомое меньше середины - середина становится правой границей и поиск уже проходит в левой части списка;
+	*	Если искомое больше середины - середина становится левой границей и поиск уже проходит в правой части списка.
+	* Дальше снова расчитывается середина уже измененных границ и снова сравнивается с искомым значением.
+	* Алгоритм будет остановлен, если границы сомкнутся или если число будет найдено:
+	*	Если найдено - возвращает индекс позиции;
+	*	Если граница сомкнулись - возвращает -1
+	*/
 	int midd = 0;
-	while (1) {
-		midd = (left + right) / 2;
+	while (true) {
+		midd = (left + right) / 2; // расчитываем среднее значение в списке
 
-		if (key < arr[midd])
-			right = midd - 1;
-		else if (key > arr[midd])
-			left = midd + 1;
+		if (key < arr[midd]) // если ключ меньше
+			right = midd - 1; // правая граница = середине
+		else if (key > arr[midd]) // если ключ больше
+			left = midd + 1; // левая граница = середине
 		else
-			return midd;
+			return midd; // число найдено
 
-		if (left > right)
+		if (left > right) // если границы сомкнулись
 			return -1;
 	}
 }
 
 int main() {
-	srand(time(0));
 	Lotery lot;
-	lot.checkTickets();
+	lot.checkParticipantTickets();
 	return 0;
 }

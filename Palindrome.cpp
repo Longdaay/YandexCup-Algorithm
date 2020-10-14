@@ -1,3 +1,31 @@
+/* Задача B. Фактор палиндромности
+*	Ограничение времени		1 секунда
+*	Ограничение памяти		512Mb
+*	Ввод					стандартный ввод или input.txt
+*	Вывод					стандартный вывод или output.txt
+* 
+* Условие задачи:
+* Аркадий — большой фанат использования машинного обучения в любой задаче. Он верит в безграничную силу
+* волшебства этой популярной молодой науки. Именно поэтому Аркадий постоянно постоянно придумывает всё новые
+* и новые факторы, которые можно вычислить для различных объектов.
+* Напомним, палиндромом называется строка, которая одинаково читается от начала к концу и от конца к началу.
+* Для каждой строки в своей базе данных Аркадий хочет найти самую короткую её подстроку, состоящую хотя бы из
+* двух символов и являющуюся палиндромом. Если таких подстрок несколько, Аркадий хочет выбрать лексикографически минимальную.
+* 
+* Формат ввода:
+* В единственной строке входных данных записана одна строка из базы Аркадия — непустая последовательность строчных букв английского алфавита.
+* Длина строки составляет не менее 2 и не превосходит 200 000 символов.
+* 
+* Формат вывода:
+* Выведите минимальную по длине подстроку строки из входных данных, состоящую хотя бы из двух символов
+* и являющуюся палиндромом. Если такой подстроки нет, то выведите -1. Напомним, что среди всех таких строк Аркадий хочет найти лексикографически минимальную.
+*/
+
+/*
+* Логика строится на переборе строки по каждому символу. Прежде сравниваются элементы слева от текущего, справа и между собой слева и справа. Если в каких-то из
+* случаев будет найдено совпадение, дальше этот палиндром лексиграфически проверяется с до этого найденным (или пустым). Если найденный меньше, то палиндром
+* перезаписывается снова и цикл делает новую итерацию.
+*/
 #include <iostream>
 #include <string>
 #include <fstream>
@@ -7,73 +35,81 @@ using namespace std;
 class Palindrome {
 public:
 	Palindrome();
-	void findPd();
+	void findPalindrome();
 	string getPalindrome() { return palindrome; }
 private:
-	string inptStr;
+	string inputString;
 	string palindrome;
 };
 
-Palindrome::Palindrome()					// конструктор
-{										   //
-	ifstream in;						  //
-	in.open("input.txt");				 //
-	getline(in, inptStr);				//
-	in.close();						   //
-}								      //
-
-bool isMinimumPd(string& tempPd, string& palindrome) {	// проверка найденного палиндрома - TRUE - найденный необходимо записать в пд. FALSE - пд меньше лексиграфически найденного
-	if (palindrome.empty())							   // если палиндром пустой записываем туда найденный
-		return true;								  //
-	if (tempPd.size() > palindrome.size())		     // если найденный больше текущего - выходим
-		return false;								//
-	if (tempPd.size() == palindrome.size())		   // если равны по размеру - лексиграфически малый
-		if (tempPd < palindrome)				  //
-			return true;					     //
-		else									//
-			return false;					   //
-	else									  // если найденный меньше текущего - записываем и ищем дальше
-		return true;						 //
+Palindrome::Palindrome() { // конструктор
+	ifstream in; // открываем поток
+	in.open("input.txt"); // открываем файл
+	getline(in, inputString); // записываем строку
+	in.close(); // закрываем поток
 }
 
-void Palindrome::findPd() {
+bool isMinimumPd(string& tempPd, string& palindrome) {	
+	/* проверка найденного палиндрома:
+	*	TRUE - найденный необходимо записать в палиндром. 
+	*	FALSE - палиндром меньше лексиграфически найденного
+	*/
+	if (palindrome.empty())	// если палиндром пустой записываем туда найденный
+		return true;
+	if (tempPd.size() > palindrome.size()) // если найденный больше текущего - выходим
+		return false;
+	if (tempPd.size() == palindrome.size()) // если равны по размеру - лексиграфически малый
+		if (tempPd < palindrome)
+			return true;
+		else
+			return false;
+	else // если найденный меньше текущего - записываем и ищем дальше
+		return true;
+}
 
+void Palindrome::findPalindrome() {
+	/*
+	* поиск палиндрома в строке. Сравниваются элементы слева от текущего, справа и между собой слева и справа. 
+	* Если в каких-то из случаев будет найдено совпадение, дальше этот палиндром лексиграфически проверяется с
+	* до этого найденным (или пустым). Если найденный меньше, то палиндром
+	* перезаписывается снова и цикл делает новую итерацию.
+	*/
 	string tempPd; /// строка, в которой будет временно найденный пд
 
-	for (int i = 1; i < inptStr.size(); i++) { // идем по каждому циклу в строке, сразу переходим на второй символ
+	for (int i = 1; i < inputString.size(); i++) { // идем по каждому циклу в строке, сразу переходим на второй символ
 
 		tempPd.clear();	// очищаем временный пд
 
-		if (inptStr[i - 1] == inptStr[i]) {				// проверка смежного левого
-			tempPd = inptStr.substr(i - 1, 2);
-			if (isMinimumPd(tempPd, palindrome))	  //
-				palindrome = tempPd;				 //
-			continue;								//
+		if (inputString[i - 1] == inputString[i]) {	// проверка смежного левого
+			tempPd = inputString.substr(i - 1, 2); // получаем найденный палиндром из строки
+			if (isMinimumPd(tempPd, palindrome))
+				palindrome = tempPd;
+			continue;
 		}
 
-		if (inptStr[i + 1] == inptStr[i]) {				// проверка смежного правого
-			tempPd = inptStr.substr(i, 2);
-			if (isMinimumPd(tempPd, palindrome))	  //
-				palindrome = tempPd;				 //
-			continue;								//
+		if (inputString[i + 1] == inputString[i]) {	// проверка смежного правого
+			tempPd = inputString.substr(i, 2); // получаем найденный палиндром из строки
+			if (isMinimumPd(tempPd, palindrome))
+				palindrome = tempPd;
+			continue;
 		}
 
-		if (inptStr[i - 1] == inptStr[i + 1]) {			// проверка левых и правых
-			tempPd = inptStr.substr(i - 1, 3);
-			if (isMinimumPd(tempPd, palindrome))	  //
-				palindrome = tempPd;				 //
-			continue;								//
+		if (inputString[i - 1] == inputString[i + 1]) {	// проверка левых и правых
+			tempPd = inputString.substr(i - 1, 3); // получаем найденный палиндром из строки
+			if (isMinimumPd(tempPd, palindrome))
+				palindrome = tempPd;
+			continue;
 		}
 
 	}
 }
 
-int main() {											// основной цикл
-	Palindrome pd;									   // объявляем класс
-	pd.findPd();									  // поиск
-	if (!pd.getPalindrome().empty())				 // выводим полученный пд или -1
-		cout << pd.getPalindrome() << endl;			//
-	else										   //
-		cout << "-1\n";							  //
-	return 0;									 //
+int main() {
+	Palindrome pd;
+	pd.findPalindrome();// поиск
+	if (!pd.getPalindrome().empty())// выводим полученный палиндром или -1
+		cout << pd.getPalindrome() << endl;
+	else
+		cout << "-1\n";
+	return 0;
 }
