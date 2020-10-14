@@ -40,13 +40,14 @@
 
 using namespace std;
 int max_depth = 0;
+vector<int> other_centres_indexes_list;
 
 class Topology {
 public:
     Topology();
     void setComputersConnectionsMatrix();
     void checkAllComputers();
-    vector<int> Dijkstra(int begin_index);
+    vector<int> Dijkstra(int begin_index, int trigger);
     void checkAllpairStorage(vector<int>& potentionalStorage);
     void findPotentionalComputerStorage(vector<vector<int>>& lits_computerDepth);
     int get_total() { return total_computers; }
@@ -113,7 +114,7 @@ void Topology::setComputersConnectionsMatrix() {
 }
 
 
-vector<int> Topology::Dijkstra(int begin_index) {
+vector<int> Topology::Dijkstra(int begin_index, int trigger) {
     /*
     * Алгоритм Дейкстры. Используется лишь часть алгоритма, а именно расчет всех путей от заданной точки ко всем точкам в графе. Алгоритм работает со взвешенными графами,
     * значения у которых неотрицательны. Дополнительное условие состоит в установке, так называемого, триггера - узла, через который пройти нельзя.
@@ -142,7 +143,7 @@ vector<int> Topology::Dijkstra(int begin_index) {
         visited_computers_list[i] = 1;
     }
     countSteps_computerToAll[begin_index] = 0; // После этого необходимо указать расстояние у искомой точки равное 0 (т.е. мы уже в ней находимся, расстояние 0)
-
+    visited_computers_list[trigger] = 0;
 
     /*
     * Дальше задается цикл с постусловием, в котором первом делом инициализируем максимальными значениями номер компьютера с минимальным значением, а потом и расстояние этого
@@ -164,6 +165,8 @@ vector<int> Topology::Dijkstra(int begin_index) {
         // цикл поиска связей этого компьютера с другими
         if (minValueIndex != MAXWEIGHTVALUE) { // проверка на конец просчета всех путей (исходя из предыдущего цикла - если все вершины будут посещены, то присваиваемое значение максимально возможное не изменится)
             for (int i = 0; i < computersConnectionsMatrix.size(); i++) {
+                if (trigger == i)
+                    continue;
                 if (computersConnectionsMatrix[minValueIndex][i] > 0) { // если есть связь с другим компьютером
                     temp = minWeightToComputer + computersConnectionsMatrix[minValueIndex][i]; // Добавляем найденный минимальный вес к текущему весу вершины
                     if (temp < countSteps_computerToAll[i]) //и сравниваем с текущим минимальным весом вершины
@@ -203,6 +206,32 @@ void Matrixrecursion(int currentComp, vector<vector<int>>& MainMatrix, vector<in
     max_depth < depth ? max_depth = depth : max_depth; // проверка максимальной и текущей
 }
 
+void other_centres_finder_recursion(int center_index, vector<vector<int>>& MainMatrix, vector<int>& computers_visited, int distance_to_other_centres, int depth) {
+
+    if (depth == distance_to_other_centres) {
+        other_centres_indexes_list.push_back(center_index);
+        return;
+    }
+
+    for (int j = 0; j < MainMatrix.size(); j++) { // идем циклом по всем элементам в строке
+        if (MainMatrix[center_index][j] == 1) { // проверка наличия свзяи со другим компьютером
+            if (!computers_visited[j]) { // проверка был ли это компьютер посещен
+                computers_visited[j] = 1; // помечаем компьютер посещенным
+                other_centres_finder_recursion(j, MainMatrix, computers_visited, distance_to_other_centres, depth + 1); // запускаем рекурсию с новой строкой и с увеличенным значением глубины
+            }
+        }
+    }
+}
+
+void printMatrix(vector<vector<int>>& matrix) {
+    for (auto& token : matrix) {
+        for (auto& element : token) {
+            cout << element << " \t";
+        }
+        cout << endl;
+    }
+}
+
 void Topology::findPotentionalComputerStorage(vector<vector<int>>& lits_computerDepth) {
     /*
     * поиск потенциальных компьютеров-хранилиш. Для этого создается список, который будет хранить глубины и номера таких компьютеров.
@@ -211,18 +240,37 @@ void Topology::findPotentionalComputerStorage(vector<vector<int>>& lits_computer
     * Если триггер будет равен 3, то будут выбраны компьютеры 4, 5, 5, 6.
     * После получения списка потенциальных хранилищ отправляемся в функцию проверки пар этих хранилищ для поиска минимальной ненадежности сети
     */
-    vector<int> potentialStorageList; // список потенциальных компьютеров хранилищ (глубина -> компьютер)
-    int i = 0;
-    int offset = 0; // триггер
-    while (offset != 3 && i < lits_computerDepth.size() - 1) { // пока не добрались до конца списка или не достигли триггера
-        potentialStorageList.push_back(lits_computerDepth[i][1]); // добавляем в список потенциальный компьютер-хранилище
-        if (lits_computerDepth[i][0] != lits_computerDepth[i + 1][0]) // если следующий элемент не будет равен текущему 
-            offset++; // то прибавляем к триггеру шаг
-        i++;
-    }
+    vector<int> centres_list;
+    int DEPTH = 1;
+    int distance_to_other_centres;
+    vector<int> computersVisited_list(computersConnectionsMatrix.size(), 0);
+    vector<int> other_centres_for_indexation;
+
     //cout << "Potential Storage:\n";
-    //printMatrix(potentialStorage);
-    checkAllpairStorage(potentialStorageList);
+    //printMatrix(lits_computerDepth);
+    if (lits_computerDepth[0][1] != lits_computerDepth[1][1])
+        centres_list.push_back(lits_computerDepth[0][1]);
+    else {
+        centres_list.push_back(lits_computerDepth[0][1]);
+        centres_list.push_back(lits_computerDepth[1][1]);
+    }
+
+    distance_to_other_centres = lits_computerDepth[0][0] / 2;
+    
+    for (int i = 0; i < centres_list.size(); i++) {
+        computersVisited_list.clear(); // очистка списка посещенных компьютеров
+        computersVisited_list.resize(computersConnectionsMatrix.size()); // расширение списка до количества компьютеров
+        computersVisited_list[centres_list[i]] = true; // помечаем текущий компьютер посещенным
+        other_centres_finder_recursion(centres_list[i], computersConnectionsMatrix, computersVisited_list, distance_to_other_centres, 0);
+    }
+    other_centres_for_indexation = other_centres_indexes_list;
+    for (int i = 0; i < other_centres_for_indexation.size(); i++) {
+        computersVisited_list.clear(); // очистка списка посещенных компьютеров
+        computersVisited_list.resize(computersConnectionsMatrix.size()); // расширение списка до количества компьютеров
+        computersVisited_list[other_centres_for_indexation[i]] = true; // помечаем текущий компьютер посещенным
+        other_centres_finder_recursion(other_centres_for_indexation[i], computersConnectionsMatrix, computersVisited_list, DEPTH, 0);
+    }
+    checkAllpairStorage(other_centres_indexes_list);
 }
 
 void Topology::checkAllComputers() {
@@ -262,7 +310,25 @@ bool checkPairCompsInList(const vector<vector<int>>& pairList, vector<int> poten
     return false;
 }
 
+vector <int> clear_list_from_nonequial_numbers(vector<int>& potentialStorage) {
+    set <int> list_equial_numbers;
+    vector <int> list_equial_numbers_vec;
+    int previous_size;
+    int last_value_list_storage;
+
+    while (potentialStorage.size()) {
+        previous_size = list_equial_numbers.size();
+        last_value_list_storage = potentialStorage[potentialStorage.size() - 1];
+        potentialStorage.pop_back();
+        list_equial_numbers.insert(last_value_list_storage);
+        if (previous_size != list_equial_numbers.size())
+            list_equial_numbers_vec.push_back(last_value_list_storage);
+    }
+    return list_equial_numbers_vec;
+}
+
 void Topology::checkAllpairStorage(vector<int>& potentialStorage) {
+    potentialStorage = clear_list_from_nonequial_numbers(potentialStorage);
     /*
     * проверка всех пар потенциальных хранилищ на минимальную ненадежность сети. Логика заключается в следующем: перебор всех неповторяющихся пар хранилищ и получение их максимальной ненадежности.
     * запись этих значений и пар хранилищ в словарь и выбор минимального ключа словаря. Это и будет пара компьютеры, где наиболее выгодно можно расположить хранилища.  
@@ -289,8 +355,8 @@ void Topology::checkAllpairStorage(vector<int>& potentialStorage) {
             if (!checkPairCompsInList(pairList, { firstPotentialStorage, secondPotentialStorage })) { // если такой пары нет, то записываем ее в список пар
                 pairList.push_back({ firstPotentialStorage , secondPotentialStorage }); // записываем пару 1,2
                 pairList.push_back({ secondPotentialStorage , firstPotentialStorage }); // записываем пару 2,1
-                reliabilityValueFirstComputer = Dijkstra(firstPotentialStorage); // ненадежность первого компьютера
-                reliabilityValueSecondComputer = Dijkstra(secondPotentialStorage); // ненадежность второго компьютера 
+                reliabilityValueFirstComputer = Dijkstra(firstPotentialStorage, secondPotentialStorage); // ненадежность первого компьютера
+                reliabilityValueSecondComputer = Dijkstra(secondPotentialStorage, firstPotentialStorage); // ненадежность второго компьютера 
                 best_reliability_list.clear();
                 for (int i = 0; i < reliabilityValueFirstComputer.size(); i++) {
                     if (reliabilityValueFirstComputer[i] < reliabilityValueSecondComputer[i])
