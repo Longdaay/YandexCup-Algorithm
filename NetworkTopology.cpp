@@ -35,27 +35,64 @@
 #include <algorithm>
 #include <set>
 #include <map>
+#include <queue>
 
 #define MAXWEIGHTVALUE 10000
 
+struct Graph;
 using namespace std;
 int max_depth = 0;
 vector<int> other_centres_indexes_list;
+
+class Heap
+{
+    int Dist;
+    int City;
+public:
+    Heap(int _Dist, int _y)
+    {
+        Dist = _Dist;
+        City = _y;
+    }
+    int getDist() const { return Dist; }
+    int getCity() const { return City; }
+};
+
+class myComparator
+{
+public:
+    int operator() (const Heap& p1, const Heap& p2)
+    {
+        return p1.getDist() > p2.getDist();
+    }
+};
+
+struct Graph {
+public:
+    int numberOfCities;
+    int numberOfRoads;
+    std::vector<std::vector< std::pair<int, int>>> inputData;
+};
+
+struct Distances
+{
+    std::vector<int> distances;
+    std::vector<int> previous;
+};
 
 class Topology {
 public:
     Topology();
     void setComputersConnectionsMatrix();
     void checkAllComputers();
-    vector<int> Dijkstra(int begin_index);
     void checkAllpairStorage(vector<int>& potentionalStorage);
     void findPotentionalComputerStorage(vector<vector<int>>& lits_computerDepth);
     void other_centres_finder(vector <int>& centres_list, int& steps_to_new_center);
     int get_total() { return total_computers; }
 private:
     int total_computers;
-    vector <vector<int>> computersConnectionsMatrix;
     vector<vector<int>> all_steps_list;
+    Graph compsConnectionGraph;
 };
 
 Topology::Topology() { // конструктор
@@ -79,11 +116,7 @@ void Topology::setComputersConnectionsMatrix() {
     
     in.open("input.txt"); // открываем файл
     in >> total_computers; // получаем количество узлов
-
-    computersConnectionsMatrix.resize(total_computers);// расширяем матрицу смежности узлов
-    for (int i = 0; i < total_computers; i++)//
-        computersConnectionsMatrix[i].resize(total_computers);//
-
+    compsConnectionGraph.numberOfCities = total_computers;
     /*
     * запись из файла происходит следующим образом: считывается первое значение (количество компьютеров)
     * дальше считывается следующий символ строки. Затем организовывается цикл. Пока следующий символ не будет равен переносу строки, продолжаем считывать из файла соединение.
@@ -91,144 +124,67 @@ void Topology::setComputersConnectionsMatrix() {
     * После этого заполняется матрица смежности. 1 - обозначет, что связь между двумя компьютерами есть. Условием не оговорено, что номера компьютеров могут больше количества компьютеров.
     * Поэтому логика жестко связана на этих номерах.
     */
-    while (iterator < total_computers - 1) { // пока не дошли до конечного соединения
-        in >> tempComputer; // считываем первый узел
-        ComputersConnection.push_back(tempComputer); //  в массив
-        in.get(t); // считываем символ
-        while (t != '\n') { // пока символ не конец строки
-            if (!in.eof()) { // если не достигли конца файла
-                in >> tempComputer;  // считываем второй узел
-                ComputersConnection.push_back(tempComputer); // в массив
-                in.get(t); // считываем символ
-            }
-            else // иначе
-                t = '\n'; // присваиваем конец строки
-        }
-        int first = ComputersConnection[0] - 1; // первая позиция
-        int second = ComputersConnection[1] - 1; // вторая позиция
-        computersConnectionsMatrix[first][second] = 1; // заполнили матрицу смежности
-        computersConnectionsMatrix[second][first] = 1; //
+    compsConnectionGraph.inputData.resize(total_computers);
 
-        iterator++; // добавили к итератору
-        ComputersConnection.clear();
+    for (int i = 0; i < total_computers - 1; i++) {
+        int edgeStartPoint, edgeEndPoint;
+        in >> edgeStartPoint >> edgeEndPoint;
+        compsConnectionGraph.inputData[edgeStartPoint - 1].push_back(std::make_pair(edgeEndPoint - 1, 1));
+        compsConnectionGraph.inputData[edgeEndPoint - 1].push_back(std::make_pair(edgeStartPoint - 1, 1));
     }
     in.close();
 }
 
+Distances DijkstraForward(Graph& inputGraph, int start_Point) {
 
-vector<int> Topology::Dijkstra(int begin_index) {
-    /*
-    * Алгоритм Дейкстры. Используется лишь часть алгоритма, а именно расчет всех путей от заданной точки ко всем точкам в графе. Алгоритм работает со взвешенными графами,
-    * значения у которых неотрицательны. Дополнительное условие состоит в установке, так называемого, триггера - узла, через который пройти нельзя.
-    * Алгоритм заключается в следующем: 
-    *   Инициализация всех расстояний компьютера максимальным значением, кроме искомого (у искомого расстояние = 0)
-    *   Поиск текущего минимального непосещенного веса компьютера и присваивание его номера и расстоянния
-    *   Поиск связей этого компьютера с другими и сравнение полученного сложение путей к связному компьютеру и исходное расстояние связного компьютера
-    *   Помечаем этот компьютер как посещенный и возвращаемся в цикл снова.
-    *   Сортировка полученных расстояний
-    *   Поиск максимального расстояния.
-    */   
+    std::vector<Heap> BinaryHeap;
 
-    vector <int> countSteps_computerToAll;// список, размерностью количества компьютеров, который хранит пути от заданной точке ко всем.
-    countSteps_computerToAll.resize(computersConnectionsMatrix.size());
-    vector <int> visited_computers_list; //Есть список посещенных компьютеров, который необходим для обработки всех компьютеров(1 - компьютер не был посещен).
-    visited_computers_list.resize(computersConnectionsMatrix.size());
-    int temp, minValueIndex, minWeightToComputer;
-    int i = 1;
+    Distances Result;
+    Result.distances.resize(inputGraph.numberOfCities);
+    Result.previous.resize(inputGraph.numberOfCities);
 
-
-
-    // Первоначально необходимо расстояние до каждого элемента указать как максимально большое значение (в идеале бесконечность);
-    // постепенно эти значения будут заменятся на корректные значения расстояний.
-    for (int i = 0; i < computersConnectionsMatrix.size(); i++) {
-        countSteps_computerToAll[i] = MAXWEIGHTVALUE;
-        visited_computers_list[i] = 1;
+    for (int i = 0; i < inputGraph.numberOfCities; i++) {
+        Result.distances[i] = MAXWEIGHTVALUE;
     }
-    countSteps_computerToAll[begin_index] = 0; // После этого необходимо указать расстояние у искомой точки равное 0 (т.е. мы уже в ней находимся, расстояние 0)
 
-    /*
-    * Дальше задается цикл с постусловием, в котором первом делом инициализируем максимальными значениями номер компьютера с минимальным значением, а потом и расстояние этого
-    * компьютера. Далее запускаем цикл по поиску непосещенной минимальной вершины (в 1 раз это будет начальная точка - дальше зависит от весов компьютеров)
-    * Если компьютер не был еще посещен и его значение расстояния меньше, чем номинальное, то мы присваиваем его номер и его расстояние соответсвующим переменным.
-    * затем мы снова задаем цикл, в котором производим поиск связей этого компьютера с другими и производим сравнение полученного сложение путей к связному компьютеру и исходное расстояние связного компьютера
-    * Проходим этим циклом по всем связей такого компьютера и после помечаем этот компьютер как посещенный и возвращаемся в цикл снова
-    */
-    do {
-        minValueIndex = MAXWEIGHTVALUE; // задаем максимально возможное значение индексу
-        minWeightToComputer = MAXWEIGHTVALUE; // задаем максимально возможное значение расстояние
-        for (int i = 0; i < computersConnectionsMatrix.size(); i++) { // проходим циклом по всем компьютерам
-            if ((visited_computers_list[i] == 1) && (countSteps_computerToAll[i] < minWeightToComputer)) { // если нашли непосещенный компьютер с минимальным весом, то присваиваем его номер и его расстояние соответсвующим переменным
-                minWeightToComputer = countSteps_computerToAll[i]; // минимальное расстояние такого компьютера
-                minValueIndex = i; // индекс такого компьютера
-            }
+    Result.distances[start_Point] = 0;
+
+    BinaryHeap.push_back(Heap(0, start_Point));
+
+    std::make_heap(BinaryHeap.begin(), BinaryHeap.end(), myComparator());
+
+    while (!BinaryHeap.empty()) {
+
+        std::pop_heap(BinaryHeap.begin(), BinaryHeap.end(), myComparator());
+        Heap temp = BinaryHeap.back();
+        BinaryHeap.pop_back();
+
+
+        std::pair<int, int> cur;
+        cur.first = temp.getDist();
+        cur.second = temp.getCity();
+
+        if (cur.first > Result.distances[cur.second]) {
+            continue;
         }
 
-        // цикл поиска связей этого компьютера с другими
-        if (minValueIndex != MAXWEIGHTVALUE) { // проверка на конец просчета всех путей (исходя из предыдущего цикла - если все вершины будут посещены, то присваиваемое значение максимально возможное не изменится)
-            for (int i = 0; i < computersConnectionsMatrix.size(); i++) {
-                if (computersConnectionsMatrix[minValueIndex][i] > 0) { // если есть связь с другим компьютером
-                    temp = minWeightToComputer + computersConnectionsMatrix[minValueIndex][i]; // Добавляем найденный минимальный вес к текущему весу вершины
-                    if (temp < countSteps_computerToAll[i]) //и сравниваем с текущим минимальным весом вершины
-                        countSteps_computerToAll[i] = temp; // если меньше, то присваиваем
+        for (int i = 0; i < (int)inputGraph.inputData[cur.second].size(); ++i) {
+
+            if (inputGraph.inputData[cur.second][i].second + Result.distances[cur.second] < Result.distances[inputGraph.inputData[cur.second][i].first]) {
+
+                int temp = Result.distances[inputGraph.inputData[cur.second][i].first];
+
+                Result.distances[inputGraph.inputData[cur.second][i].first] = inputGraph.inputData[cur.second][i].second + Result.distances[cur.second];
+                Result.previous[inputGraph.inputData[cur.second][i].first] = cur.second;
+
+                if (temp > Result.distances[inputGraph.inputData[cur.second][i].first]) {
+                    BinaryHeap.emplace_back(Heap(Result.distances[inputGraph.inputData[cur.second][i].first], inputGraph.inputData[cur.second][i].first));
+                    std::push_heap(BinaryHeap.begin(), BinaryHeap.end(), myComparator());
                 }
             }
-            visited_computers_list[minValueIndex] = 0; // помечаем компьютер как посещенный
-        }
-    } while (minValueIndex < MAXWEIGHTVALUE); // пока не прошли все компьютеры
-
-    //* Сортировка полученных расстояний
-    //sort(countSteps_computerToAll.begin(), countSteps_computerToAll.begin() + countSteps_computerToAll.size());
-
-    //* Поиск максимального расстояния. Загвоздка заключается в следующем. По причине наличия триггера расстояния до компьютеров, где триггер был элементом в цепочке,
-    //* равны максимально возможному значению. Поэтому необходимо организовать цикл в котором следует проверят текущий элемент с максимально возможным значением.
-    //* если он равен, итератору добавляем шаг + 1. Как только мы находим значение не равное максимально возможному значению, выходим из цикла и выводим максимальный элемент.
-    return countSteps_computerToAll;
-}
-
-void Matrixrecursion(int currentComp, vector<vector<int>>& MainMatrix, vector<int>& computers_visited, int depth) {
-    /*
-    * Рекурсивная функция поиска глубины графа из начальной точки. Функция обходит каждый элемент в текущей строке матрицы смежности
-    * и проверяет есть ли связь с следующим компьютером. Если такая связь есть проверяется был ли этот компьютер до этого посещен.
-    * Если нет, то помечаем этот компьютер как посещенным и запускаем рекурсивную функцию заново с новой строкой и глубина увеличивается на 1.
-    * Иначе цикл движется дальше по элементам.
-    * После того как цикл прошел все элементы в строке, сравнивается максимально полученная глубина с текущей. Если текущая больше, то максимальной глубине
-    * присваивается текущая.
-    */
-    for (int j = 0; j < MainMatrix.size(); j++) { // идем циклом по всем элементам в строке
-        if (MainMatrix[currentComp][j] == 1) { // проверка наличия свзяи со другим компьютером
-            if (!computers_visited[j]) { // проверка был ли это компьютер посещен
-                computers_visited[j] = 1; // помечаем компьютер посещенным
-                Matrixrecursion(j, MainMatrix, computers_visited, depth + 1); // запускаем рекурсию с новой строкой и с увеличенным значением глубины
-            }
         }
     }
-    max_depth < depth ? max_depth = depth : max_depth; // проверка максимальной и текущей
-}
-
-void other_centres_finder_recursion(int center_index, vector<vector<int>>& MainMatrix, vector<int>& computers_visited, int DEPTH, int depth) {
-
-    if (depth == DEPTH) {
-        other_centres_indexes_list.push_back(center_index);
-        return;
-    }
-
-    for (int j = 0; j < MainMatrix.size(); j++) { // идем циклом по всем элементам в строке
-        if (MainMatrix[center_index][j] == 1) { // проверка наличия свзяи со другим компьютером
-            if (!computers_visited[j]) { // проверка был ли это компьютер посещен
-                computers_visited[j] = 1; // помечаем компьютер посещенным
-                other_centres_finder_recursion(j, MainMatrix, computers_visited, DEPTH, depth + 1); // запускаем рекурсию с новой строкой и с увеличенным значением глубины
-            }
-        }
-    }
-}
-
-void printMatrix(vector<vector<int>>& matrix) {
-    for (auto& token : matrix) {
-        for (auto& element : token) {
-            cout << element << " \t";
-        }
-        cout << endl;
-    }
+    return Result;
 }
 
 void Topology::other_centres_finder(vector <int>& centres_list, int& steps_to_new_center) {
@@ -252,9 +208,7 @@ void Topology::findPotentionalComputerStorage(vector<vector<int>>& lits_computer
     * После получения списка потенциальных хранилищ отправляемся в функцию проверки пар этих хранилищ для поиска минимальной ненадежности сети
     */
     vector<int> centres_list;
-    int DEPTH = 1;
     int distance_to_other_centres;
-    vector<int> computersVisited_list(computersConnectionsMatrix.size(), 0);
     vector<int> other_centres_for_indexation;
 
     //cout << "Potential Storage:\n";
@@ -271,14 +225,12 @@ void Topology::findPotentionalComputerStorage(vector<vector<int>>& lits_computer
     other_centres_finder(centres_list, distance_to_other_centres);
     other_centres_for_indexation = other_centres_indexes_list;
     for (int i = 0; i < other_centres_for_indexation.size(); i++) {
-        computersVisited_list.clear(); // очистка списка посещенных компьютеров
-        computersVisited_list.resize(computersConnectionsMatrix.size()); // расширение списка до количества компьютеров
-        computersVisited_list[other_centres_for_indexation[i]] = true; // помечаем текущий компьютер посещенным
-        other_centres_finder_recursion(other_centres_for_indexation[i], computersConnectionsMatrix, computersVisited_list, DEPTH, 0);
+        for (int x = 0; x < compsConnectionGraph.inputData[other_centres_for_indexation[i]].size(); x++)
+            other_centres_indexes_list.push_back(compsConnectionGraph.inputData[other_centres_for_indexation[i]][x].first);
     }
+    compsConnectionGraph.inputData.clear();
     checkAllpairStorage(other_centres_indexes_list);
 }
-
 
 int maximum(vector<int>& value_list) {
     int maximumValue_in_list = value_list[0];// задаем максимуму - первое значение
@@ -302,11 +254,10 @@ void Topology::checkAllComputers() {
     */
     vector<vector<int>> depthValueComputer_list; // массив, который будет хранить глубины и номера этих компьютеров
     vector<int> steps_from_computer_to_other_computers;
-    int max_steps = 20000;
+    int max_steps = 200001;
     int counter = 0;
-
     for (int i = 0; i < total_computers; i++) { // цикл по всем компьютерам
-        steps_from_computer_to_other_computers = Dijkstra(i);
+        steps_from_computer_to_other_computers = DijkstraForward(compsConnectionGraph, i).distances;
         all_steps_list.push_back(steps_from_computer_to_other_computers);
     }
     for (auto steps_list : all_steps_list) {
@@ -322,38 +273,7 @@ void Topology::checkAllComputers() {
     findPotentionalComputerStorage(depthValueComputer_list); // функция нахождения потенциальных компьютеров-хранилищ
 }
 
-bool checkPairCompsInList(const vector<vector<int>>& pairList, vector<int> potentionalPair) {
-    /*
-    * проверка пары компьютеров на уникальность в списке пар. Прогоняется массив по первому элементу пары, а дальше поиск по второму элементу пары
-    * если найдена - true, если не найдена пара - false
-    */
-    for (int i = 0; i < pairList.size(); i++) {
-        if (pairList[i][0] == potentionalPair[0])
-            if (pairList[i][1] == potentionalPair[1])
-                return true;
-    }
-    return false;
-}
-
-vector <int> clear_list_from_nonequial_numbers(vector<int>& potentialStorage) {
-    set <int> list_equial_numbers;
-    vector <int> list_equial_numbers_vec;
-    int previous_size;
-    int last_value_list_storage;
-
-    while (potentialStorage.size()) {
-        previous_size = list_equial_numbers.size();
-        last_value_list_storage = potentialStorage[potentialStorage.size() - 1];
-        potentialStorage.pop_back();
-        list_equial_numbers.insert(last_value_list_storage);
-        if (previous_size != list_equial_numbers.size())
-            list_equial_numbers_vec.push_back(last_value_list_storage);
-    }
-    return list_equial_numbers_vec;
-}
-
 void Topology::checkAllpairStorage(vector<int>& potentialStorage) {
-    potentialStorage = clear_list_from_nonequial_numbers(potentialStorage);
     /*
     * проверка всех пар потенциальных хранилищ на минимальную ненадежность сети. Логика заключается в следующем: перебор всех неповторяющихся пар хранилищ и получение их максимальной ненадежности.
     * запись этих значений и пар хранилищ в словарь и выбор минимального ключа словаря. Это и будет пара компьютеры, где наиболее выгодно можно расположить хранилища.  
@@ -364,7 +284,6 @@ void Topology::checkAllpairStorage(vector<int>& potentialStorage) {
     * 
     * После прохода по всем парам хранилищ и запись их в словарь, выбирается минимальмальный ключ и выводится соответствующая ему пара компьютеров.
     */
-    vector<vector<int>> pairList; // список пар компьютеров - хранилищ
     map<int, pair <int, int>> map_reliability_to_pair_computers; // словарь ненадежности пар компьютеров (ненадежность : пара хранилищ)
     map <int, pair<int, int>> ::iterator it; // итератор по словарю
     vector<int> reliabilityValueFirstComputer, reliabilityValueSecondComputer; // переменные для записи ненадежности 
